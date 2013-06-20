@@ -1,0 +1,81 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>ca.szc.keratin</groupId>
+  <artifactId>keratin-core</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>Keratin Core</name>
+  <description>Keratin Core IRC Client Framework</description>
+  <url>https://github.com/ASzc/keratin-irc</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <url>http://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>ASzc</id>
+      <name>Alex Szczuczko</name>
+      <email>alex@szc.ca</email>
+      <url>http://szc.ca</url>
+      <roles>
+        <role>developer</role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/ASzc/keratin-irc.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:ASzc/keratin-irc.git</developerConnection>
+    <url>https://github.com/ASzc/keratin-irc</url>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/ASzc/keratin-irc/issues</url>
+  </issueManagement>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.mycila.maven-license-plugin</groupId>
+        <artifactId>maven-license-plugin</artifactId>
+        <version>1.9.0</version>
+        <configuration>
+          <header>license-header.txt</header>
+          <strictCheck>true</strictCheck>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.engio</groupId>
+      <artifactId>mbassador</artifactId>
+      <version>1.1.7</version>
+    </dependency>
+    <dependency>
+      <groupId>org.tinylog</groupId>
+      <artifactId>tinylog</artifactId>
+      <version>0.8</version>
+    </dependency>
+  </dependencies>
+</project>

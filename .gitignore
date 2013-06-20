@@ -1,0 +1,6 @@
+*.swp
+.settings/
+.project
+.classpath
+keratin-bot/target/
+keratin-core/target/
