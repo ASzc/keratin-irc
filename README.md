@@ -8,6 +8,8 @@ MBassador is used for the event bus. Tinylog is used for the logging. Networking
 
 ## One-file Bot Example
 
+This is a Hello World example written in one file for the sake of brevity. Using separate files is recommended for your HandlerContainers.
+
     package com.example.helloworld;
 
     import net.engio.mbassy.listener.Handler;
