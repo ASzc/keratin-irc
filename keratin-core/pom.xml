@@ -61,6 +61,9 @@
         <configuration>
           <header>license-header.txt</header>
           <strictCheck>true</strictCheck>
+          <includes>
+            <include>src/**</include>
+          </includes>
         </configuration>
       </plugin>
     </plugins>
