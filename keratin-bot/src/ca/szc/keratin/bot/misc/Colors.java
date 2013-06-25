@@ -50,4 +50,20 @@ public class Colors
     public static final String WHITE = "\u000300";
 
     public static final String YELLOW = "\u000308";
+
+    /**
+     * Return a copy of the input String with IRC bold characters inserted.
+     * 
+     * @return The modified copy of the input String
+     */
+    public static String bold( String input )
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append( BOLD );
+        sb.append( input );
+        sb.append( BOLD );
+
+        return sb.toString();
+    }
 }
