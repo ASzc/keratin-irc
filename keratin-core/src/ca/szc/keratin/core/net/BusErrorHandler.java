@@ -22,6 +22,17 @@ public class BusErrorHandler
     public void handleError( PublicationError error )
     {
         Logger.error( error.toString() );
+        logAllSubCauses( error.getCause() );
+
     }
 
+    private void logAllSubCauses( Throwable cause )
+    {
+        Throwable subcause = cause.getCause();
+        if ( subcause != null )
+        {
+            Logger.error( subcause, "Subcause of " + cause );
+            logAllSubCauses( subcause );
+        }
+    }
 }
