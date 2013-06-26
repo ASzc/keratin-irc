@@ -16,6 +16,7 @@ import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
 import ca.szc.keratin.core.event.message.send.SendPrivmsg;
+import ca.szc.keratin.core.misc.LineWrap;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
@@ -71,7 +72,8 @@ public class ReceivePrivmsg
     {
         try
         {
-            getBus().publish( new SendPrivmsg( getBus(), channel, reply ) );
+            for ( String line : LineWrap.wrap( reply ) )
+                getBus().publish( new SendPrivmsg( getBus(), channel, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
@@ -88,7 +90,8 @@ public class ReceivePrivmsg
     {
         try
         {
-            getBus().publish( new SendPrivmsg( getBus(), sender, reply ) );
+            for ( String line : LineWrap.wrap( reply ) )
+                getBus().publish( new SendPrivmsg( getBus(), sender, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
