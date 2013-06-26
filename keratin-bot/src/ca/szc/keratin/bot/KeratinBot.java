@@ -18,6 +18,8 @@ import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.annotation.AssignedBot;
 import ca.szc.keratin.bot.annotation.HandlerContainerDetector;
+import ca.szc.keratin.bot.handlers.ConnectionPreamble;
+import ca.szc.keratin.bot.handlers.JoinInitialChannels;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.message.send.SendJoin;
 import ca.szc.keratin.core.event.message.send.SendNick;

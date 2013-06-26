@@ -4,7 +4,7 @@
  * This file may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-package ca.szc.keratin.bot;
+package ca.szc.keratin.bot.handlers;
 
 import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
