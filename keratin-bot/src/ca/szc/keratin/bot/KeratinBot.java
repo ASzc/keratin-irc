@@ -9,8 +9,8 @@ package ca.szc.keratin.bot;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import net.engio.mbassy.bus.MBassador;
 
@@ -47,7 +47,7 @@ public class KeratinBot
 
     private boolean sslEnabled;
 
-    private List<String> channelList;
+    private Set<String> channels;
 
     private boolean initialConnectionMade;
 
@@ -106,7 +106,7 @@ public class KeratinBot
         connectionBus = conn.getEventBus();
 
         connectionBus.subscribe( new ConnectionPreamble( user, nick, realName ) );
-        connectionBus.subscribe( new JoinInitialChannels( channelList ) );
+        connectionBus.subscribe( new JoinInitialChannels( this, channels ) );
 
         for ( Class<?> handlerContainer : HandlerContainerDetector.getContainers() )
         {
@@ -274,13 +274,13 @@ public class KeratinBot
     }
 
     /**
-     * Get the list of current channels the bot is joined to.
+     * Get the set of current channels the bot is joined to.
      * 
-     * @return List of channel strings
+     * @return Set of channel strings
      */
-    public List<String> getChannelList()
+    public Set<String> getChannels()
     {
-        return channelList;
+        return channels;
     }
 
     /**
@@ -291,9 +291,9 @@ public class KeratinBot
      */
     public void addChannel( String channel )
     {
-        if ( channelList == null )
+        if ( channels == null )
         {
-            channelList = new LinkedList<String>();
+            channels = new HashSet<String>();
         }
 
         if ( initialConnectionMade )
@@ -308,7 +308,7 @@ public class KeratinBot
             }
         }
 
-        this.channelList.add( channel );
+        this.channels.add( channel );
     }
 
     /**
@@ -330,13 +330,7 @@ public class KeratinBot
                 Logger.error( e, "Could not send part message for channel '{0}'", channel );
             }
         }
-        for ( int i = 0; i < channelList.size(); i++ )
-        {
-            if ( channelList.get( i ).equals( channel ) )
-            {
-                channelList.remove( i );
-            }
-        }
+        channels.remove( channel );
     }
 
 }

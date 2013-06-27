@@ -6,15 +6,17 @@
  */
 package ca.szc.keratin.bot.handlers;
 
-import java.util.List;
+import java.util.Set;
 
 import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
+import ca.szc.keratin.bot.KeratinBot;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
+import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
 import ca.szc.keratin.core.event.message.send.SendJoin;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -22,10 +24,13 @@ import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 
 public class JoinInitialChannels
 {
-    private List<String> channels;
+    private final Set<String> channels;
 
-    public JoinInitialChannels( List<String> channels )
+    private final KeratinBot bot;
+
+    public JoinInitialChannels( KeratinBot bot, Set<String> channels )
     {
+        this.bot = bot;
         this.channels = channels;
     }
 
@@ -48,6 +53,30 @@ public class JoinInitialChannels
             {
                 Logger.error( e, "Could not send join message for channel '{0}'", channel );
             }
+        }
+    }
+
+    /**
+     * Rejoins channels when kicked
+     */
+    @Handler
+    public void onKick( ReceiveKick event )
+    {
+        String target = event.getTarget();
+
+        if ( target.equals( bot.getNick() ) )
+        {
+            try
+            {
+                Thread.sleep( 500 );
+            }
+            catch ( InterruptedException e )
+            {
+            }
+
+            String channel = event.getChannel();
+
+            bot.addChannel( channel );
         }
     }
 }
