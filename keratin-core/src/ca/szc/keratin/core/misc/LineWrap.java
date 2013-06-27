@@ -35,16 +35,31 @@ public class LineWrap
      */
     public static List<String> wrap( String raw, final int maxLineLength )
     {
-        // Base case?
+        // Is this a base case?
         if ( raw.length() <= maxLineLength )
         {
-            // Init return list
-            List<String> lines = new LinkedList<String>();
+            // \n characters force a break regardless of where they are.
+            // Search the remainder segment for one.
+            int endIndex = raw.indexOf( '\n' );
+            if ( endIndex != -1 )
+            {
+                String line = raw.substring( 0, endIndex );
+                List<String> lines = wrap( raw.substring( endIndex + 1 ), raw.length() );
+                lines.add( 0, line );
+                return lines;
+            }
+            else
+            {
+                // Otherwise this really is a base case
 
-            // Add the whole remainder as the first inserted line
-            lines.add( raw );
+                // Init return list
+                List<String> lines = new LinkedList<String>();
 
-            return lines;
+                // Add the whole remainder as the first inserted line
+                lines.add( raw );
+
+                return lines;
+            }
         }
         else
         {

@@ -175,7 +175,7 @@ public class IrcMessage
                     params[i] = param;
                 }
                 if ( !trailingParamPattern.matcher( param ).matches() )
-                    throw new InvalidMessageParamException( "Did not match pattern" );
+                    throw new InvalidMessageParamException( "'" + param + "' did not match trailing param pattern" );
             }
             else
             {
@@ -183,7 +183,7 @@ public class IrcMessage
                 if ( param.length() <= 0 )
                     throw new InvalidMessageParamException( "Must be greater than zero length" );
                 if ( !middleParamPattern.matcher( param ).matches() )
-                    throw new InvalidMessageParamException( "Did not match pattern" );
+                    throw new InvalidMessageParamException( "'" + param + "' did not match middle param pattern" );
             }
         }
 
