@@ -16,9 +16,16 @@ public class ReceivePart
 {
     public static final String COMMAND = "PART";
 
+    private final String channel;
+
+    private final String parter;
+
     public ReceivePart( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        parter = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        channel = message.getParams()[0].substring( 1 );
     }
 
     // public ReceivePart( MBassador<IrcEvent> bus, String prefix, String channel )
@@ -26,4 +33,15 @@ public class ReceivePart
     // {
     // super( bus, new IrcMessage( prefix, COMMAND, channel ) );
     // }
+
+    public String getParter()
+    {
+        return parter;
+    }
+
+    public String getChannel()
+    {
+        return channel;
+    }
+
 }

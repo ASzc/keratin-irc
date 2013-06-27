@@ -16,9 +16,19 @@ public class ReceiveInvite
 {
     public static final String COMMAND = "INVITE";
 
+    private final String channel;
+
+    private final String sender;
+
+    private final String invitee;
+
     public ReceiveInvite( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        invitee = message.getParams()[0];
+        channel = message.getParams()[1];
     }
 
     // public ReceiveInvite( MBassador<IrcEvent> bus, String prefix, String nick, String channel )
@@ -26,4 +36,19 @@ public class ReceiveInvite
     // {
     // super( bus, new IrcMessage( prefix, COMMAND, nick, channel ) );
     // }
+
+    public String getChannel()
+    {
+        return channel;
+    }
+
+    public String getSender()
+    {
+        return sender;
+    }
+
+    public String getInvitee()
+    {
+        return invitee;
+    }
 }

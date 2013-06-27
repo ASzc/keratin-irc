@@ -16,9 +16,16 @@ public class ReceiveNick
 {
     public static final String COMMAND = "NICK";
 
+    private final String sender;
+
+    private final String nick;
+
     public ReceiveNick( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        nick = message.getParams()[0];
     }
 
     // public ReceiveNick( MBassador<IrcEvent> bus, String prefix, String nick )
@@ -26,4 +33,14 @@ public class ReceiveNick
     // {
     // super( bus, new IrcMessage( prefix, COMMAND, nick ) );
     // }
+
+    public String getSender()
+    {
+        return sender;
+    }
+
+    public String getNick()
+    {
+        return nick;
+    }
 }

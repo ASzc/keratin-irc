@@ -71,6 +71,7 @@ public class ReceivePrivmsg
         return text;
     }
 
+    @Override
     public void reply( String reply )
     {
         try
@@ -84,11 +85,13 @@ public class ReceivePrivmsg
         }
     }
 
+    @Override
     public void replyDirectly( String reply )
     {
         reply( sender + ": " + reply );
     }
 
+    @Override
     public void replyPrivately( String reply )
     {
         try

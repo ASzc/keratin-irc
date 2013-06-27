@@ -16,14 +16,39 @@ public class ReceiveMode
 {
     public static final String COMMAND = "MODE";
 
+    private final String target;
+
+    private final String sender;
+
+    private final String flags;
+
     public ReceiveMode( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        target = message.getParams()[0];
+        flags = message.getParams()[1];
     }
-    
+
     // public ReceiveMode( MBassador<IrcEvent> bus, String prefix, String name, String mode )
     // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     // {
     // super( bus, new IrcMessage( prefix, COMMAND, name, mode ));
     // }
+
+    public String getTarget()
+    {
+        return target;
+    }
+
+    public String getSender()
+    {
+        return sender;
+    }
+
+    public String getFlags()
+    {
+        return flags;
+    }
 }

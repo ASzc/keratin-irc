@@ -16,9 +16,16 @@ public class ReceiveQuit
 {
     public static final String COMMAND = "QUIT";
 
+    private final String text;
+
+    private final String quitter;
+
     public ReceiveQuit( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        quitter = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        text = message.getParams()[0].substring( 1 );
     }
 
     // public ReceiveQuit( MBassador<IrcEvent> bus, String prefix, String text )
@@ -26,4 +33,14 @@ public class ReceiveQuit
     // {
     // super( bus, new IrcMessage( prefix, COMMAND, text ) );
     // }
+
+    public String getText()
+    {
+        return text;
+    }
+
+    public String getQuitter()
+    {
+        return quitter;
+    }
 }

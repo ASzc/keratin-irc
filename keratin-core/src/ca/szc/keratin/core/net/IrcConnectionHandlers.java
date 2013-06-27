@@ -21,10 +21,6 @@ import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
 import ca.szc.keratin.core.event.message.recieve.ReceivePing;
-import ca.szc.keratin.core.event.message.send.SendPong;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
-import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 
 /**
  * Event handlers for connection events
@@ -97,16 +93,7 @@ public class IrcConnectionHandlers
     @Handler
     private void handlePingPong( ReceivePing event )
     {
-        MBassador<IrcEvent> bus = event.getBus();
-
         Logger.trace( "Handling PONG by sending echo PING" );
-        try
-        {
-            bus.publishAsync( new SendPong( bus, event.getMessage().getParams() ) );
-        }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
-        {
-            Logger.error( e, "Couldn't reply to ping." );
-        }
+        event.pong();
     }
 }

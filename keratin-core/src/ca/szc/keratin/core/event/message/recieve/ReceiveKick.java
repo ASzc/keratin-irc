@@ -16,9 +16,19 @@ public class ReceiveKick
 {
     public static final String COMMAND = "KICK";
 
+    private final String channel;
+
+    private final String sender;
+
+    private final String target;
+
     public ReceiveKick( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
+
+        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        channel = message.getParams()[0];
+        target = message.getParams()[1];
     }
 
     // public ReceiveKick( MBassador<IrcEvent> bus, String prefix, String channel, String user, String comment )
@@ -27,4 +37,18 @@ public class ReceiveKick
     // super( bus, new IrcMessage( prefix, COMMAND, channel, user, comment ) );
     // }
 
+    public String getChannel()
+    {
+        return channel;
+    }
+
+    public String getSender()
+    {
+        return sender;
+    }
+
+    public String getTarget()
+    {
+        return target;
+    }
 }
