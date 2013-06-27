@@ -39,7 +39,10 @@ public class ReceivePrivmsg
         super( bus, message );
 
         sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
-        channel = message.getParams()[0];
+        if ( !message.getParams()[0].startsWith( "#" ) )
+            channel = sender;
+        else
+            channel = message.getParams()[0];
         text = message.getParams()[1].substring( 1 );
     }
 
