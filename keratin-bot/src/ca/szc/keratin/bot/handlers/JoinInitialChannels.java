@@ -14,6 +14,7 @@ import net.engio.mbassy.listener.Handler;
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.KeratinBot;
+import ca.szc.keratin.bot.KeratinBot.Channel;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
@@ -24,11 +25,11 @@ import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 
 public class JoinInitialChannels
 {
-    private final Set<String> channels;
+    private final Set<Channel> channels;
 
     private final KeratinBot bot;
 
-    public JoinInitialChannels( KeratinBot bot, Set<String> channels )
+    public JoinInitialChannels( KeratinBot bot, Set<Channel> channels )
     {
         this.bot = bot;
         this.channels = channels;
@@ -43,11 +44,14 @@ public class JoinInitialChannels
         MBassador<IrcEvent> bus = event.getBus();
 
         Logger.trace( "Sending initial channel join messages" );
-        for ( String channel : channels )
+        for ( Channel channel : channels )
         {
             try
             {
-                bus.publish( new SendJoin( bus, channel ) );
+                if ( channel.getKey() == null )
+                    bus.publish( new SendJoin( bus, channel.getName() ) );
+                else
+                    bus.publish( new SendJoin( bus, channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
@@ -74,9 +78,11 @@ public class JoinInitialChannels
             {
             }
 
-            String channel = event.getChannel();
+            String channelName = event.getChannel();
 
-            bot.addChannel( channel );
+            // Add channel will automatically look up the key, if there was one, since this channel has been added
+            // previously.
+            bot.addChannel( channelName );
         }
     }
 }

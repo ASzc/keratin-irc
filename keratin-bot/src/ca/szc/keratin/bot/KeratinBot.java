@@ -47,7 +47,7 @@ public class KeratinBot
 
     private boolean sslEnabled;
 
-    private Set<String> channels;
+    private Set<Channel> channels;
 
     private boolean initialConnectionMade;
 
@@ -73,7 +73,7 @@ public class KeratinBot
      * @param initialChannels The channels to connect to initially, can be empty, but not null.
      */
     public KeratinBot( String user, String nick, String realName, String serverAddress, int serverPort,
-                       boolean sslEnabled, String[] initialChannels )
+                       boolean sslEnabled, Channel[] initialChannels )
     {
         this();
         setUser( user );
@@ -82,9 +82,9 @@ public class KeratinBot
         setServerAddress( serverAddress );
         setServerPort( serverPort );
         setSslEnabled( sslEnabled );
-        for ( String channel : initialChannels )
+        for ( Channel channel : initialChannels )
         {
-            addChannel( channel );
+            addChannel( channel.getName(), channel.getKey() );
         }
     }
 
@@ -278,7 +278,7 @@ public class KeratinBot
      * 
      * @return Set of channel strings
      */
-    public Set<String> getChannels()
+    public Set<Channel> getChannels()
     {
         return channels;
     }
@@ -287,20 +287,23 @@ public class KeratinBot
      * Add a channel to the list of current channels the bot is joined to. Send an update message to the server if
      * connected.
      * 
-     * @param channel Channel to join
+     * @param channel The channel to add
      */
-    public void addChannel( String channel )
+    public void addChannel( Channel channel )
     {
         if ( channels == null )
         {
-            channels = new HashSet<String>();
+            channels = new HashSet<Channel>();
         }
 
         if ( initialConnectionMade )
         {
             try
             {
-                connectionBus.publish( new SendJoin( connectionBus, channel ) );
+                if ( channel.getKey() == null )
+                    connectionBus.publish( new SendJoin( connectionBus, channel.getName() ) );
+                else
+                    connectionBus.publish( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
@@ -312,25 +315,148 @@ public class KeratinBot
     }
 
     /**
-     * Remove a channel to the list of current channels the bot is joined to. Send an update message to the server if
+     * Add a channel to the list of current channels the bot is joined to. Send an update message to the server
+     * immediately if connected. If a channel was added previously with a key, the key will be looked up automatically
+     * when being re-added.
+     * 
+     * @param name Channel's name
+     */
+    public void addChannel( String name )
+    {
+        addChannel( name, null );
+    }
+
+    /**
+     * Add a channel to the list of current channels the bot is joined to. Send an update message to the server
+     * immediately if connected. If a channel was added previously with a key, and the key given is null, the key will
+     * be looked up automatically when being re-added.
+     * 
+     * @param name Channel's name
+     * @param key Channel's key if it exists, otherwise null
+     */
+    public void addChannel( String name, String key )
+    {
+        if ( channels == null )
+        {
+            channels = new HashSet<Channel>();
+        }
+
+        if ( key == null )
+        {
+            for ( Channel channel : channels )
+            {
+                if ( channel.getKey() != null && channel.getKey().equals( name ) )
+                {
+                    key = channel.getKey();
+                    break;
+                }
+            }
+        }
+
+        addChannel( new Channel( name, key ) );
+    }
+
+    /**
+     * Remove a channel from the list of current channels the bot is joined to. Send an update message to the server if
      * connected.
      * 
      * @param channel Channel to part from
      */
-    public void remChannel( String channel )
+    public void remChannel( Channel channel )
+    {
+        remChannel( channel.getName() );
+    }
+
+    /**
+     * Remove a channel from the list of current channels the bot is joined to. Send an update message to the server if
+     * connected.
+     * 
+     * @param name Name of the channel to part from
+     */
+    public void remChannel( String name )
     {
         if ( initialConnectionMade )
         {
             try
             {
-                connectionBus.publish( new SendPart( connectionBus, channel ) );
+                connectionBus.publish( new SendPart( connectionBus, name ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
-                Logger.error( e, "Could not send part message for channel '{0}'", channel );
+                Logger.error( e, "Could not send part message for channel '{0}'", name );
             }
         }
-        channels.remove( channel );
+        channels.remove( name );
     }
 
+    /**
+     * Holds data for one channel
+     */
+    public static class Channel
+    {
+        private final String name;
+
+        private final String key;
+
+        /**
+         * @param name The channel's name. Including the #. Cannot be null.
+         * @param key The channel's key. May be null if there is no key.
+         */
+        public Channel( String name, String key )
+        {
+            this.name = name;
+            this.key = key;
+        }
+
+        /**
+         * @return The channel's name. Including the #. Cannot be null.
+         */
+        public String getName()
+        {
+            return name;
+        }
+
+        /**
+         * @return The channel's key. May be null if there is no key.
+         */
+        public String getKey()
+        {
+            return key;
+        }
+
+        /**
+         * Compares Channel objects based on their names and keys. Two channels must have matching non-null names, the
+         * keys may be both null, or equal. Comparing to a String will compare the channel name to the String. They must
+         * be equal to match.
+         */
+        @Override
+        public boolean equals( Object obj )
+        {
+            if ( obj instanceof Channel )
+            {
+                Channel otherChannel = (Channel) obj;
+                if ( getName().equals( otherChannel.getName() ) )
+                    if ( getKey() == null && otherChannel.getKey() == null )
+                        return true;
+                    else if ( getKey() == null || otherChannel.getKey() == null )
+                        return false;
+                    else if ( getKey().equals( otherChannel.getKey() ) )
+                        return true;
+            }
+            else if ( obj instanceof String )
+            {
+                String channelName = (String) obj;
+                if ( getName().equals( channelName ) )
+                    return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Channel [name=" + name + ", key=" + key + "]";
+        }
+    }
 }

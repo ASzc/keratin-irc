@@ -19,10 +19,17 @@ public class SendJoin
 {
     public static final String COMMAND = "JOIN";
 
-    public SendJoin( MBassador<IrcEvent> bus, String channel )
+    public SendJoin( MBassador<IrcEvent> bus, String name )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, channel ) );
+        super( bus, new IrcMessage( null, COMMAND, name ) );
+    }
+
+    public SendJoin( MBassador<IrcEvent> bus, String name, String key )
+        throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
+    {
+        // TODO validation
+        super( bus, new IrcMessage( null, COMMAND, name, key ) );
     }
 }

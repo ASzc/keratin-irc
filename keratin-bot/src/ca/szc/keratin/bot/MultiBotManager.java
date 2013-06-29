@@ -9,6 +9,8 @@ package ca.szc.keratin.bot;
 import java.util.LinkedList;
 import java.util.List;
 
+import ca.szc.keratin.bot.KeratinBot.Channel;
+
 /**
  * Facilitates easier management of multiple bots
  */
@@ -27,7 +29,7 @@ public class MultiBotManager
 
     private boolean sslEnabled;
 
-    private String[] initialChannels;
+    private Channel[] initialChannels;
 
     private final List<KeratinBot> botList;
 
@@ -78,7 +80,7 @@ public class MultiBotManager
      * @return A reference to the new bot, also stored internally.
      */
     public KeratinBot newBot( String user, String nick, String realName, String serverAddress, int serverPort,
-                              boolean sslEnabled, String[] initialChannels )
+                              boolean sslEnabled, Channel[] initialChannels )
     {
         KeratinBot bot = new KeratinBot( user, nick, realName, serverAddress, serverPort, sslEnabled, initialChannels );
 
@@ -158,12 +160,12 @@ public class MultiBotManager
         this.user = user;
     }
 
-    public String[] getInitialChannels()
+    public Channel[] getInitialChannels()
     {
         return initialChannels;
     }
 
-    public void setInitialChannels( String[] initialChannels )
+    public void setInitialChannels( Channel[] initialChannels )
     {
         this.initialChannels = initialChannels;
     }
