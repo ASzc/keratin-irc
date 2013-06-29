@@ -23,7 +23,8 @@ This is a Hello World example written in one file for the sake of brevity. Using
     {
         public static void main( String[] args )
         {
-            // Long form init, it's also possible to do all of this in one line with a different constructor
+            // Long form init, it's also possible to do all of this in one line
+            // with a different constructor.
             KeratinBot keratinBot = new KeratinBot();
             keratinBot.setUser( "HW" );
             keratinBot.setNick( "HelloWorld" );
@@ -31,7 +32,7 @@ This is a Hello World example written in one file for the sake of brevity. Using
             keratinBot.setServerAddress( "irc.freenode.net" );
             keratinBot.setServerPort( 6667 );
             keratinBot.setSslEnabled( false );
-            keratinBot.addChannel( "#kertainexample" );
+            keratinBot.addChannel( "#keratinexample" );
 
             // Does not block forever
             keratinBot.connect();
@@ -49,9 +50,7 @@ This is a Hello World example written in one file for the sake of brevity. Using
             String text = event.getText();
 
             if ( "!hello".equals( text ) )
-            {
                 event.replyDirectly( "Hello, World!" );
-            }
         }
     }
 
