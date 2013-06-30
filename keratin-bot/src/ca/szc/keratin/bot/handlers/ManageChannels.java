@@ -23,13 +23,16 @@ import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 
-public class JoinInitialChannels
+/**
+ * Manages channel join status
+ */
+public class ManageChannels
 {
     private final Set<Channel> channels;
 
     private final KeratinBot bot;
 
-    public JoinInitialChannels( KeratinBot bot, Set<Channel> channels )
+    public ManageChannels( KeratinBot bot, Set<Channel> channels )
     {
         this.bot = bot;
         this.channels = channels;

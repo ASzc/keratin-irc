@@ -19,7 +19,7 @@ import org.pmw.tinylog.Logger;
 import ca.szc.keratin.bot.annotation.AssignedBot;
 import ca.szc.keratin.bot.annotation.HandlerContainerDetector;
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
-import ca.szc.keratin.bot.handlers.JoinInitialChannels;
+import ca.szc.keratin.bot.handlers.ManageChannels;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.message.send.SendJoin;
 import ca.szc.keratin.core.event.message.send.SendNick;
@@ -106,7 +106,7 @@ public class KeratinBot
         connectionBus = conn.getEventBus();
 
         connectionBus.subscribe( new ConnectionPreamble( user, nick, realName ) );
-        connectionBus.subscribe( new JoinInitialChannels( this, channels ) );
+        connectionBus.subscribe( new ManageChannels( this, channels ) );
 
         for ( Class<?> handlerContainer : HandlerContainerDetector.getContainers() )
         {
