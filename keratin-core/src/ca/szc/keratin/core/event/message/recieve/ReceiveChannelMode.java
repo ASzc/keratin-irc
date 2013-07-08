@@ -19,9 +19,4 @@ public class ReceiveChannelMode
     {
         super( bus, message );
     }
-
-    public String getTargetChannel()
-    {
-        return getTarget();
-    }
 }

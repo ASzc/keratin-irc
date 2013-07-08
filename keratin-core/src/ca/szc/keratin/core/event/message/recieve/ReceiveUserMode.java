@@ -19,9 +19,4 @@ public class ReceiveUserMode
     {
         super( bus, message );
     }
-
-    public String getTargetNick()
-    {
-        return getTarget();
-    }
 }
