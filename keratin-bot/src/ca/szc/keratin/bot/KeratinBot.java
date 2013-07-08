@@ -10,10 +10,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import net.engio.mbassy.bus.MBassador;
 
@@ -51,7 +51,7 @@ public class KeratinBot
 
     private boolean sslEnabled;
 
-    private Set<Channel> channels;
+    private Map<String, Channel> channels;
 
     private boolean initialConnectionMade;
 
@@ -282,40 +282,20 @@ public class KeratinBot
      * 
      * @return Set of channel strings
      */
-    public Set<Channel> getChannels()
+    public Collection<Channel> getChannels()
     {
-        return channels;
+        return channels.values();
     }
 
     /**
-     * Add a channel to the list of current channels the bot is joined to. Send an update message to the server if
-     * connected.
+     * Get the Channel stored under a channel name.
      * 
-     * @param channel The channel to add
+     * @param name The name of the channel to get. Includes the # prefix.
+     * @return The corresponding Channel, if it exists, else null
      */
-    public void addChannel( Channel channel )
+    public Channel getChannel( String name )
     {
-        if ( channels == null )
-        {
-            channels = new HashSet<Channel>();
-        }
-
-        if ( initialConnectionMade )
-        {
-            try
-            {
-                if ( channel.getKey() == null )
-                    connectionBus.publish( new SendJoin( connectionBus, channel.getName() ) );
-                else
-                    connectionBus.publish( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
-            }
-            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
-            {
-                Logger.error( e, "Could not send join message for channel '{0}'", channel );
-            }
-        }
-
-        this.channels.add( channel );
+        return channels.get( name );
     }
 
     /**
@@ -342,22 +322,57 @@ public class KeratinBot
     {
         if ( channels == null )
         {
-            channels = new HashSet<Channel>();
+            channels = new HashMap<String, Channel>();
         }
 
         if ( key == null )
         {
-            for ( Channel channel : channels )
+            for ( Entry<String, Channel> channelEntry : channels.entrySet() )
             {
-                if ( channel.getKey() != null && channel.getKey().equals( name ) )
+                String channelName = channelEntry.getKey();
+                Channel channel = channelEntry.getValue();
+                String channelKey = channel.getKey();
+
+                if ( channelKey != null && channelName.equals( name ) )
                 {
-                    key = channel.getKey();
+                    key = channelEntry.getKey();
                     break;
                 }
             }
         }
 
         addChannel( new Channel( name, key ) );
+    }
+
+    /**
+     * Add a channel to the list of current channels the bot is joined to. Send an update message to the server if
+     * connected.
+     * 
+     * @param channel The channel to add
+     */
+    public void addChannel( Channel channel )
+    {
+        if ( channels == null )
+        {
+            channels = new HashMap<String, Channel>();
+        }
+
+        if ( initialConnectionMade )
+        {
+            try
+            {
+                if ( channel.getKey() == null )
+                    connectionBus.publish( new SendJoin( connectionBus, channel.getName() ) );
+                else
+                    connectionBus.publish( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
+            }
+            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+            {
+                Logger.error( e, "Could not send join message for channel '{0}'", channel );
+            }
+        }
+
+        this.channels.put( channel.getName(), channel );
     }
 
     /**
@@ -455,77 +470,6 @@ public class KeratinBot
                                   channelName );
                 }
             }
-        }
-    }
-
-    /**
-     * Holds data for one channel
-     */
-    public static class Channel
-    {
-        private final String name;
-
-        private final String key;
-
-        /**
-         * @param name The channel's name. Including the #. Cannot be null.
-         * @param key The channel's key. May be null if there is no key.
-         */
-        public Channel( String name, String key )
-        {
-            this.name = name;
-            this.key = key;
-        }
-
-        /**
-         * @return The channel's name. Including the #. Cannot be null.
-         */
-        public String getName()
-        {
-            return name;
-        }
-
-        /**
-         * @return The channel's key. May be null if there is no key.
-         */
-        public String getKey()
-        {
-            return key;
-        }
-
-        /**
-         * Compares Channel objects based on their names and keys. Two channels must have matching non-null names, the
-         * keys may be both null, or equal. Comparing to a String will compare the channel name to the String. They must
-         * be equal to match.
-         */
-        @Override
-        public boolean equals( Object obj )
-        {
-            if ( obj instanceof Channel )
-            {
-                Channel otherChannel = (Channel) obj;
-                if ( getName().equals( otherChannel.getName() ) )
-                    if ( getKey() == null && otherChannel.getKey() == null )
-                        return true;
-                    else if ( getKey() == null || otherChannel.getKey() == null )
-                        return false;
-                    else if ( getKey().equals( otherChannel.getKey() ) )
-                        return true;
-            }
-            else if ( obj instanceof String )
-            {
-                String channelName = (String) obj;
-                if ( getName().equals( channelName ) )
-                    return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Channel [name=" + name + ", key=" + key + "]";
         }
     }
 }

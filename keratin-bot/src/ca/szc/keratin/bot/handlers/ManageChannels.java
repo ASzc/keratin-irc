@@ -6,15 +6,16 @@
  */
 package ca.szc.keratin.bot.handlers;
 
-import java.util.Set;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
+import ca.szc.keratin.bot.Channel;
 import ca.szc.keratin.bot.KeratinBot;
-import ca.szc.keratin.bot.KeratinBot.Channel;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
@@ -28,11 +29,11 @@ import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
  */
 public class ManageChannels
 {
-    private final Set<Channel> channels;
+    private final Map<String, Channel> channels;
 
     private final KeratinBot bot;
 
-    public ManageChannels( KeratinBot bot, Set<Channel> channels )
+    public ManageChannels( KeratinBot bot, Map<String, Channel> channels )
     {
         this.bot = bot;
         this.channels = channels;
@@ -47,8 +48,9 @@ public class ManageChannels
         MBassador<IrcEvent> bus = event.getBus();
 
         Logger.trace( "Sending initial channel join messages" );
-        for ( Channel channel : channels )
+        for ( Entry<String, Channel> channelEntry : channels.entrySet() )
         {
+            Channel channel = channelEntry.getValue();
             try
             {
                 if ( channel.getKey() == null )

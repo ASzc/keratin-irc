@@ -9,7 +9,6 @@ package ca.szc.keratin.bot;
 import java.util.LinkedList;
 import java.util.List;
 
-import ca.szc.keratin.bot.KeratinBot.Channel;
 
 /**
  * Facilitates easier management of multiple bots
