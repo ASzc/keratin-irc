@@ -9,7 +9,10 @@ package ca.szc.keratin.bot;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import net.engio.mbassy.bus.MBassador;
@@ -22,6 +25,7 @@ import ca.szc.keratin.bot.handlers.ConnectionPreamble;
 import ca.szc.keratin.bot.handlers.ManageChannels;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.message.send.SendJoin;
+import ca.szc.keratin.core.event.message.send.SendMode;
 import ca.szc.keratin.core.event.message.send.SendNick;
 import ca.szc.keratin.core.event.message.send.SendPart;
 import ca.szc.keratin.core.net.InvalidPortException;
@@ -387,6 +391,71 @@ public class KeratinBot
             }
         }
         channels.remove( name );
+    }
+
+    /**
+     * Op a single nick in a channel. Probably will fail if the bot is not an operator in the given channel.
+     * 
+     * @param channelName The channel to op the nick in
+     * @param nick The nick to op in the channel
+     */
+    public void opNick( String channelName, String nick )
+    {
+        try
+        {
+            connectionBus.publish( new SendMode( connectionBus, channelName, "+o", nick ) );
+        }
+        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        {
+            Logger.error( e, "Couldn't send op mode change for nick '{0}' in channel '{1}'", nick, channelName );
+        }
+    }
+
+    /**
+     * Op one or more nicks in a single channel. Probably will fail if the bot is not an operator in the given channel.
+     * 
+     * @param channelName The channel to op the nicks in
+     * @param nicks The nicks to op in the channel
+     */
+    public void opNicks( String channelName, Collection<String> nicks )
+    {
+        final int bufferSize = 4;
+
+        // Op in groups of size bufferSize
+        Iterator<String> iterator = nicks.iterator();
+        while ( iterator.hasNext() )
+        {
+            StringBuilder nickBuffer = new StringBuilder();
+            StringBuilder modeBuffer = new StringBuilder();
+            modeBuffer.append( "+" );
+
+            for ( int i = 0; iterator.hasNext() && i < bufferSize; )
+            {
+                String nick = iterator.next();
+
+                nickBuffer.append( nick );
+                nickBuffer.append( " " );
+
+                modeBuffer.append( "o" );
+
+                i++;
+            }
+
+            String nicksString = nickBuffer.toString();
+            String modeString = modeBuffer.toString();
+            if ( nicksString.length() > 0 )
+            {
+                try
+                {
+                    connectionBus.publish( new SendMode( connectionBus, channelName, modeString, nicksString ) );
+                }
+                catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+                {
+                    Logger.error( e, "Couldn't send op mode change for nicks '{0}' in channel '{1}'", nicksString,
+                                  channelName );
+                }
+            }
+        }
     }
 
     /**
