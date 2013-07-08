@@ -20,9 +20,12 @@ import org.pmw.tinylog.Logger;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
+import ca.szc.keratin.core.event.message.recieve.ReceiveChannelMode;
 import ca.szc.keratin.core.event.message.recieve.ReceiveInvite;
 import ca.szc.keratin.core.event.message.recieve.ReceiveJoin;
 import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
+import ca.szc.keratin.core.event.message.recieve.ReceiveMode;
+import ca.szc.keratin.core.event.message.recieve.ReceiveNick;
 import ca.szc.keratin.core.event.message.recieve.ReceiveNotice;
 import ca.szc.keratin.core.event.message.recieve.ReceivePart;
 import ca.szc.keratin.core.event.message.recieve.ReceivePing;
@@ -30,6 +33,7 @@ import ca.szc.keratin.core.event.message.recieve.ReceivePrivmsg;
 import ca.szc.keratin.core.event.message.recieve.ReceiveQuit;
 import ca.szc.keratin.core.event.message.recieve.ReceiveReply;
 import ca.szc.keratin.core.event.message.recieve.ReceiveTopic;
+import ca.szc.keratin.core.event.message.recieve.ReceiveUserMode;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -82,26 +86,60 @@ public class InputThread
                             String command = message.getCommand();
                             // String[] params = message.getParams();
 
+                            // INVITE
                             if ( ReceiveInvite.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceiveInvite( bus, message ) );
+
+                            // JOIN
                             else if ( ReceiveJoin.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceiveJoin( bus, message ) );
+
+                            // KICK
                             else if ( ReceiveKick.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceiveKick( bus, message ) );
+
+                            // MODE
+                            else if ( ReceiveMode.COMMAND.equals( command ) )
+                            {
+                                if ( message.getParams().length == 2 )
+                                    bus.publishAsync( new ReceiveUserMode( bus, message ) );
+                                else
+                                    bus.publishAsync( new ReceiveChannelMode( bus, message ) );
+                            }
+
+                            // NICK
+                            else if ( ReceiveNick.COMMAND.equals( command ) )
+                                bus.publishAsync( new ReceiveNick( bus, message ) );
+
+                            // NOTICE
                             else if ( ReceiveNotice.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceiveNotice( bus, message ) );
+
+                            // PART
                             else if ( ReceivePart.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceivePart( bus, message ) );
+
+                            // PING
                             else if ( ReceivePing.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceivePing( bus, message ) );
+
+                            // PRIVMSG
                             else if ( ReceivePrivmsg.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceivePrivmsg( bus, message ) );
+
+                            // QUIT
                             else if ( ReceiveQuit.COMMAND.equals( command ) )
                                 bus.publishAsync( new ReceiveQuit( bus, message ) );
-                            else if ( ReceiveTopic.COMMAND.equals( command ) )
-                                bus.publishAsync( new ReceiveTopic( bus, message ) );
+
+                            // replies
                             else if ( isDigits( command ) )
                                 bus.publishAsync( new ReceiveReply( bus, message ) );
+
+                            // TOPIC
+                            else if ( ReceiveTopic.COMMAND.equals( command ) )
+                                bus.publishAsync( new ReceiveTopic( bus, message ) );
+
+                            // others
                             else
                                 Logger.error( "Unknown message '" + message.toString().replace( "\n", "\\n" ) + "'" );
 

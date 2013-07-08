@@ -19,10 +19,10 @@ public class SendMode
 {
     public static final String COMMAND = "MODE";
 
-    public SendMode( MBassador<IrcEvent> bus, String name, String mode )
+    public SendMode( MBassador<IrcEvent> bus, String... params )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, name, mode ) );
+        super( bus, new IrcMessage( null, COMMAND, params ) );
     }
 }

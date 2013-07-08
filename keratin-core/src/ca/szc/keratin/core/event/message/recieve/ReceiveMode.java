@@ -6,6 +6,9 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
+import java.util.Arrays;
+import java.util.List;
+
 import net.engio.mbassy.bus.MBassador;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.message.MessageRecieve;
@@ -16,19 +19,24 @@ public class ReceiveMode
 {
     public static final String COMMAND = "MODE";
 
-    private final String target;
-
     private final String sender;
 
+    private final String target;
+
     private final String flags;
+
+    private final List<String> flagParams;
 
     public ReceiveMode( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );
 
+        String[] params = message.getParams();
+
         sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
-        target = message.getParams()[0];
-        flags = message.getParams()[1];
+        target = params[0];
+        flags = params[1];
+        flagParams = params.length > 2 ? Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) ) : null;
     }
 
     // public ReceiveMode( MBassador<IrcEvent> bus, String prefix, String name, String mode )
@@ -37,18 +45,23 @@ public class ReceiveMode
     // super( bus, new IrcMessage( prefix, COMMAND, name, mode ));
     // }
 
-    public String getTarget()
-    {
-        return target;
-    }
-
     public String getSender()
     {
         return sender;
     }
 
+    public String getTarget()
+    {
+        return target;
+    }
+
     public String getFlags()
     {
         return flags;
+    }
+
+    public List<String> getFlagParams()
+    {
+        return flagParams;
     }
 }
