@@ -15,7 +15,7 @@ public class ReceiveReply
     extends MessageRecieve
 {
     // Reply is a special case, encompassing all messages with numeric command parts
-    
+
     public ReceiveReply( MBassador<IrcEvent> bus, IrcMessage message )
     {
         super( bus, message );

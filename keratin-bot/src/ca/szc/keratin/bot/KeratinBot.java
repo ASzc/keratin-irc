@@ -142,6 +142,11 @@ public class KeratinBot
             }
         }
 
+        for ( Channel channel : channels.values() )
+        {
+            channel.setBus( connectionBus );
+        }
+
         conn.connect();
         initialConnectionMade = true;
     }
