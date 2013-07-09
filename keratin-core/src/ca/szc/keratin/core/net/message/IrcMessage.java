@@ -25,7 +25,8 @@ public class IrcMessage
     /**
      * Pattern that will match a nick name (Extended charset)
      */
-    private static final Pattern nickPat = Pattern.compile( "(\\p{IsAlphabetic}|\\p{Punct})(?:\\p{IsAlphabetic}|\\p{Punct}|\\d)*" );
+    private static final Pattern nickPat =
+        Pattern.compile( "(?:\\p{IsAlphabetic}|\\p{Punct})(?:\\p{IsAlphabetic}|\\p{Punct}|\\d)*" );
 
     /**
      * Pattern that will match a RFC 1459 message prefix, not including the leading colon.
@@ -53,7 +54,7 @@ public class IrcMessage
      */
     // <trailing> ::= <Any, possibly *empty*, sequence of octets not including
     // NUL or CR or LF>
-    private static final Pattern trailingParamPattern = Pattern.compile( ":[^\r\n]*" );
+    private static final Pattern trailingParamPattern = Pattern.compile( ":?[^\r\n]*" );
 
     /**
      * Pattern that will match a RFC 1459 message line. Group 1 contains the prefix, group 2 contains the command, and
@@ -248,6 +249,13 @@ public class IrcMessage
         {
             throw new InvalidMessageException( "Message parameters didn't match pattern" );
         }
+
+        // Standardize the trailing parameter to the RFC
+        String lastParam = params.pollLast();
+        if ( lastParam.startsWith( ":" ) )
+            params.add( lastParam );
+        else
+            params.add( ":" + lastParam );
 
         String[] retArray = new String[params.size()];
         params.toArray( retArray );
