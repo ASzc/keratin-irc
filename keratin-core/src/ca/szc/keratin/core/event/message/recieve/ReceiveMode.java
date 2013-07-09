@@ -19,7 +19,7 @@ public class ReceiveMode
 {
     public static final String COMMAND = "MODE";
 
-    private final String sender;
+    // private final String sender;
 
     private final String target;
 
@@ -33,10 +33,15 @@ public class ReceiveMode
 
         String[] params = message.getParams();
 
-        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        // sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
         target = params[0];
         flags = params[1];
+
         flagParams = params.length > 2 ? Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) ) : null;
+
+        String firstFlagParam = flagParams.get( 0 );
+        if ( firstFlagParam.startsWith( ":" ) )
+            flagParams.set( 0, firstFlagParam.substring( 1 ) );
     }
 
     // public ReceiveMode( MBassador<IrcEvent> bus, String prefix, String name, String mode )
@@ -45,10 +50,10 @@ public class ReceiveMode
     // super( bus, new IrcMessage( prefix, COMMAND, name, mode ));
     // }
 
-    public String getSender()
-    {
-        return sender;
-    }
+    // public String getSender()
+    // {
+    // return sender;
+    // }
 
     public String getTarget()
     {
