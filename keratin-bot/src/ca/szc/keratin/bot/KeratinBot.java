@@ -12,6 +12,8 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -445,33 +447,34 @@ public class KeratinBot
         Iterator<String> iterator = nicks.iterator();
         while ( iterator.hasNext() )
         {
-            StringBuilder nickBuffer = new StringBuilder();
+            List<String> nickBuffer = new LinkedList<String>();
             StringBuilder modeBuffer = new StringBuilder();
             modeBuffer.append( "+" );
 
             for ( int i = 0; iterator.hasNext() && i < bufferSize; )
             {
                 String nick = iterator.next();
-
-                nickBuffer.append( nick );
-                nickBuffer.append( " " );
-
+                nickBuffer.add( nick );
                 modeBuffer.append( "o" );
 
                 i++;
             }
 
-            String nicksString = nickBuffer.toString();
-            String modeString = modeBuffer.toString();
-            if ( nicksString.length() > 0 )
+            // Hijack nickBuffer so all the parameters can be given together in one array, satifying varargs
+            nickBuffer.add( 0, modeBuffer.toString() );
+            nickBuffer.add( 0, channelName );
+
+            String[] paramArray = new String[nickBuffer.size()];
+            nickBuffer.toArray( paramArray );
+            if ( paramArray.length > 0 )
             {
                 try
                 {
-                    connectionBus.publish( new SendMode( connectionBus, channelName, modeString, nicksString ) );
+                    connectionBus.publish( new SendMode( connectionBus, paramArray ) );
                 }
                 catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
                 {
-                    Logger.error( e, "Couldn't send op mode change for nicks '{0}' in channel '{1}'", nicksString,
+                    Logger.error( e, "Couldn't send op mode change for nicks '{0}' in channel '{1}'", nickBuffer,
                                   channelName );
                 }
             }
