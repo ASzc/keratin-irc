@@ -25,7 +25,7 @@ public class IrcMessage
     /**
      * Pattern that will match a nick name (Extended charset)
      */
-    private static final Pattern nickPat = Pattern.compile( "\\p{IsAlphabetic}(?:\\p{IsAlphabetic}|\\d|\\p{Punct})*" );
+    private static final Pattern nickPat = Pattern.compile( "(\\p{IsAlphabetic}|\\p{Punct})(?:\\p{IsAlphabetic}|\\p{Punct}|\\d)*" );
 
     /**
      * Pattern that will match a RFC 1459 message prefix, not including the leading colon.
