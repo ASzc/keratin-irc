@@ -8,7 +8,7 @@ public abstract class CachedValue<T>
 
     private T cachedValue = null;
 
-    public T getValue()
+    public synchronized T getValue()
     {
         if ( cachedValue == null || System.currentTimeMillis() >= lastUpdateMillis + expiryMillis )
         {
