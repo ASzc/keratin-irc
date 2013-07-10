@@ -1,22 +1,16 @@
 package ca.szc.keratin.bot;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
+import java.util.Map;
 
-import org.pmw.tinylog.Logger;
-
-import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
-
-import ca.szc.keratin.bot.util.CachedValue;
-import ca.szc.keratin.core.event.IrcEvent;
+import ca.szc.keratin.bot.User.PrivLevel;
+import ca.szc.keratin.core.event.message.recieve.ReceiveChannelMode;
+import ca.szc.keratin.core.event.message.recieve.ReceiveJoin;
+import ca.szc.keratin.core.event.message.recieve.ReceivePart;
 import ca.szc.keratin.core.event.message.recieve.ReceiveReply;
-import ca.szc.keratin.core.event.message.send.SendNames;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
-import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
@@ -24,11 +18,20 @@ import ca.szc.keratin.core.net.message.IrcMessage;
  */
 public class Channel
 {
+    private static final String OP_PREFIX = "@";
+
+    private static final String CODE_RPL_NAMREPLY = "353";
+
     private final String name;
 
     private final String key;
 
-    private CachedValue<List<String>> nicks;
+    /**
+     * Map with key of IRC nickname to corresponding User
+     */
+    private volatile Map<String, User> nicks;
+
+    private final Object nicksMutex = new Object();
 
     /**
      * @param channelName The channel's name. Including the #. Cannot be null.
@@ -38,69 +41,7 @@ public class Channel
     {
         this.name = channelName;
         this.key = channelKey;
-    }
-
-    public void setBus( final MBassador<IrcEvent> bus )
-    {
-        nicks = new CachedValue<List<String>>()
-        {
-            Semaphore replyAvailable = new Semaphore( 0 );
-
-            private List<String> nicks;
-
-            @Override
-            protected List<String> updateValue()
-            {
-                bus.subscribe( this );
-                try
-                {
-                    bus.publishAsync( new SendNames( bus, name ) );
-                    try
-                    {
-                        replyAvailable.acquire();
-                        return nicks;
-                    }
-                    catch ( InterruptedException e )
-                    {
-                        Logger.error( "Interrupted while waiting for NAMES reply", e );
-                    }
-                }
-                catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
-                {
-                    Logger.error( "Error sending NAMES message", e );
-                }
-                finally
-                {
-                    bus.unsubscribe( this );
-                }
-                return null;
-            }
-
-            @Handler
-            private void namesReply( ReceiveReply event )
-            {
-                IrcMessage msg = event.getMessage();
-                String[] params = msg.getParams();
-                String replyNum = msg.getCommand();
-                if ( "353".equals( replyNum ) && name.equals( params[2] ) )
-                {
-                    String nicksBlob = params[3];
-                    nicks = Arrays.asList( nicksBlob.split( " " ) );
-
-                    String first = nicks.get( 0 );
-                    if ( first.startsWith( ":" ) )
-                        nicks.set( 0, first.substring( 1 ) );
-
-                    replyAvailable.release();
-                }
-            }
-
-            @Override
-            protected long expiryMillis()
-            {
-                return 5000;
-            }
-        };
+        nicks = new HashMap<String, User>();
     }
 
     /**
@@ -120,14 +61,23 @@ public class Channel
     }
 
     /**
-     * Get the nicks in the channel. Nicks that are special (like operators) will have a special character prepended to
-     * them. Requires an active connection.
+     * Get all of the nicks in the channel, regardless of privilege level. Requires an active connection.
      * 
      * @return The NAMES list of this channel, or null on error.
      */
     public List<String> getNicks()
     {
-        return nicks.getValue();
+        LinkedList<String> nickList = new LinkedList<String>();
+
+        synchronized ( nicksMutex )
+        {
+            for ( User user : nicks.values() )
+            {
+                nickList.add( user.getNick() );
+            }
+        }
+
+        return nickList;
     }
 
     /**
@@ -139,10 +89,13 @@ public class Channel
     {
         LinkedList<String> filteredList = new LinkedList<String>();
 
-        for ( String nick : nicks.getValue() )
+        synchronized ( nicksMutex )
         {
-            if ( !nick.startsWith( "@" ) )
-                filteredList.add( nick );
+            for ( User user : nicks.values() )
+            {
+                if ( user.getPrivLevel().equals( PrivLevel.Regular ) )
+                    filteredList.add( user.getNick() );
+            }
         }
 
         return filteredList;
@@ -157,10 +110,13 @@ public class Channel
     {
         LinkedList<String> filteredList = new LinkedList<String>();
 
-        for ( String nick : nicks.getValue() )
+        synchronized ( nicksMutex )
         {
-            if ( nick.startsWith( "@" ) )
-                filteredList.add( nick.substring( 1 ) );
+            for ( User user : nicks.values() )
+            {
+                if ( user.getPrivLevel().equals( PrivLevel.Op ) )
+                    filteredList.add( user.getNick() );
+            }
         }
 
         return filteredList;
@@ -171,12 +127,146 @@ public class Channel
      */
     public boolean isOp( String nick )
     {
-        return nicks.getValue().contains( "@" + nick );
+        synchronized ( nicksMutex )
+        {
+            if ( nicks.containsKey( nick ) )
+            {
+                User user = nicks.get( nick );
+                if ( user.getPrivLevel().equals( PrivLevel.Op ) )
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * @return true iff the nick is in the channel and is a regular user (non-op) in the channel
+     */
+    public boolean isRegular( String nick )
+    {
+        synchronized ( nicksMutex )
+        {
+            if ( nicks.containsKey( nick ) )
+            {
+                User user = nicks.get( nick );
+                if ( user.getPrivLevel().equals( PrivLevel.Regular ) )
+                    return true;
+            }
+
+            return false;
+        }
     }
 
     @Override
     public String toString()
     {
-        return "Channel [name=" + name + ", key=" + key + "]";
+        synchronized ( nicksMutex )
+        {
+            return "Channel [name=" + name + ", key=" + key + ", nicks=" + nicks + "]";
+        }
+    }
+
+    @Handler
+    private void namesListing( ReceiveReply event )
+    {
+        IrcMessage msg = event.getMessage();
+        String[] params = msg.getParams();
+        String replyNum = msg.getCommand();
+
+        if ( CODE_RPL_NAMREPLY.equals( replyNum ) )
+        {
+            String channelName = params[2];
+            if ( name.equals( channelName ) )
+            {
+                String nicksBlob = params[3];
+                if ( nicksBlob.startsWith( ":" ) )
+                    nicksBlob = nicksBlob.substring( 1 );
+
+                String[] nicksArray = nicksBlob.split( " " );
+
+                synchronized ( nicksMutex )
+                {
+                    for ( String nick : nicksArray )
+                    {
+                        if ( nick.startsWith( OP_PREFIX ) )
+                        {
+                            nick = nick.substring( 1 );
+                            nicks.put( nick, new User( nick, PrivLevel.Op ) );
+                        }
+                        else
+                        {
+                            nicks.put( nick, new User( nick ) );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Handler
+    private void updateOnJoin( ReceiveJoin event )
+    {
+        String nick = event.getJoiner();
+
+        // Only do something if the mode change is for this channel
+        if ( name.equals( event.getChannel() ) )
+        {
+            synchronized ( nicksMutex )
+            {
+                nicks.put( nick, new User( nick ) );
+            }
+        }
+    }
+
+    @Handler
+    private void updateOnPart( ReceivePart event )
+    {
+        String nick = event.getParter();
+
+        // Only do something if the mode change is for this channel
+        if ( name.equals( event.getChannel() ) )
+        {
+            synchronized ( nicksMutex )
+            {
+                nicks.remove( nick );
+            }
+        }
+    }
+
+    @Handler
+    private void updateOnMode( ReceiveChannelMode event )
+    {
+        String flags = event.getFlags();
+
+        // Only do something if the mode change is for this channel
+        if ( name.equals( event.getTarget() ) )
+        {
+            boolean op = flags.startsWith( ( "+o" ) );
+            boolean deop = flags.startsWith( ( "-o" ) );
+
+            if ( op || deop )
+            {
+                List<String> affectedNicks = event.getFlagParams();
+
+                synchronized ( nicksMutex )
+                {
+                    for ( String nick : affectedNicks )
+                    {
+                        if ( nick.startsWith( ":" ) )
+                            nick = nick.substring( 1 );
+
+                        if ( nicks.containsKey( nick ) )
+                        {
+                            User user = nicks.get( nick );
+                            if ( op )
+                                user.setPrivLevel( PrivLevel.Op );
+                            else if ( deop )
+                                user.setPrivLevel( PrivLevel.Regular );
+                        }
+                    }
+                }
+            }
+        }
     }
 }
