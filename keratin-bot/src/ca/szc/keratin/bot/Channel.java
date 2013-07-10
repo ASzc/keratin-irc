@@ -242,8 +242,8 @@ public class Channel
         // Only do something if the mode change is for this channel
         if ( name.equals( event.getTarget() ) )
         {
-            boolean op = flags.startsWith( ( "+o" ) );
-            boolean deop = flags.startsWith( ( "-o" ) );
+            boolean op = flags.startsWith( "+o" );
+            boolean deop = flags.startsWith( "-o" );
 
             if ( op || deop )
             {
