@@ -377,6 +377,8 @@ public class KeratinBot
             {
                 Logger.error( e, "Could not send join message for channel '{0}'", channel );
             }
+
+            channel.setBus( connectionBus );
         }
 
         this.channels.put( channel.getName(), channel );
