@@ -35,4 +35,10 @@ public abstract class IrcConnectionEvent
         return socket;
     }
 
+    @Override
+    public String toString()
+    {
+        return "IrcConnectionEvent [socket=" + socket + "]";
+    }
+
 }
