@@ -16,6 +16,7 @@ This is a Hello World example written in one file for the sake of brevity. Using
     import ca.szc.keratin.bot.KeratinBot;
     import ca.szc.keratin.bot.annotation.HandlerContainer;
     import ca.szc.keratin.core.event.message.recieve.ReceivePrivmsg;
+    import ca.szc.keratin.core.net.IrcConnection.SslMode;
 
     // This annotation causes the class to be scanned for @Handler methods at connect time.
     @HandlerContainer
@@ -30,8 +31,8 @@ This is a Hello World example written in one file for the sake of brevity. Using
             keratinBot.setNick( "HelloWorld" );
             keratinBot.setRealName( "Hello World Test" );
             keratinBot.setServerAddress( "irc.freenode.net" );
-            keratinBot.setServerPort( 6667 );
-            keratinBot.setSslEnabled( false );
+            keratinBot.setServerPort( 6697 );
+            keratinBot.setSslMode( SslMode.ON ); // Or SslMode.ON_NOHOST
             keratinBot.addChannel( "#keratinexample" );
 
             // Does not block forever

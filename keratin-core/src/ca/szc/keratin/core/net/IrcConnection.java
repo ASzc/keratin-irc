@@ -34,6 +34,28 @@ public class IrcConnection
     private Thread inputWorkerThread;
 
     /**
+     * Defines the different use states of SSL. See the javadoc of the members for more information.
+     * 
+     */
+    public enum SslMode
+    {
+        /**
+         * Do not use SSL
+         */
+        OFF,
+
+        /**
+         * Enable full SSL
+         */
+        ON,
+
+        /**
+         * Enable SSL without host verification
+         */
+        ON_NOHOST
+    }
+
+    /**
      * Create an IRC connection with a String address and SSL disabled. The connection is not active until connect is
      * called.
      * 
@@ -46,7 +68,7 @@ public class IrcConnection
     public IrcConnection( String address, int port )
         throws UnknownHostException, InvalidPortException
     {
-        this( InetAddress.getByName( address ), port, false );
+        this( InetAddress.getByName( address ), port, SslMode.OFF );
     }
 
     /**
@@ -59,7 +81,7 @@ public class IrcConnection
     public IrcConnection( InetAddress address, int port )
         throws InvalidPortException
     {
-        this( address, port, false );
+        this( address, port, SslMode.OFF );
     }
 
     /**
@@ -71,7 +93,7 @@ public class IrcConnection
      *             global IPv6 address.
      * @throws InvalidPortException If the port parameter is outside the specified range of valid port values.
      */
-    public IrcConnection( String address, int port, boolean ssl )
+    public IrcConnection( String address, int port, SslMode ssl )
         throws UnknownHostException, InvalidPortException
     {
         this( InetAddress.getByName( address ), port, ssl );
@@ -84,7 +106,7 @@ public class IrcConnection
      * @param port The port number within the valid range to connect to
      * @throws InvalidPortException If the port parameter is outside the specified range of valid port values.
      */
-    public IrcConnection( InetAddress address, int port, boolean ssl )
+    public IrcConnection( InetAddress address, int port, SslMode ssl )
         throws InvalidPortException
     {
         Logger.trace( "IrcConnection instantiation" );
@@ -99,8 +121,10 @@ public class IrcConnection
 
         bus = new MBassador<IrcEvent>( BusConfiguration.Default() );
 
-        if ( ssl )
+        if ( SslMode.ON.equals( ssl ) )
             socketFactory = SSLSocketFactory.getDefault();
+        else if ( SslMode.ON_NOHOST.equals( ssl ) )
+            socketFactory = TrustAllTrustManager.getSSLSocketFactory();
         else
             socketFactory = SocketFactory.getDefault();
     }

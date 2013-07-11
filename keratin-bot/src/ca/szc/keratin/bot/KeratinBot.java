@@ -32,6 +32,7 @@ import ca.szc.keratin.core.event.message.send.SendNick;
 import ca.szc.keratin.core.event.message.send.SendPart;
 import ca.szc.keratin.core.net.InvalidPortException;
 import ca.szc.keratin.core.net.IrcConnection;
+import ca.szc.keratin.core.net.IrcConnection.SslMode;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
@@ -51,7 +52,7 @@ public class KeratinBot
 
     private int serverPort;
 
-    private boolean sslEnabled;
+    private SslMode sslMode;
 
     private Map<String, Channel> channels;
 
@@ -77,11 +78,11 @@ public class KeratinBot
      * @param realName IRC full/real name
      * @param serverAddress The address of the server to connect to when connect() is called.
      * @param serverPort The port on the server to connect to when connect() is called.
-     * @param sslEnabled Iff true, use SSL sockets.
+     * @param sslMode {@link SslMode} value
      * @param initialChannels The channels to connect to initially, can be empty, but not null.
      */
     public KeratinBot( String user, String nick, String realName, String serverAddress, int serverPort,
-                       boolean sslEnabled, Channel[] initialChannels )
+                       SslMode sslMode, Channel[] initialChannels )
     {
         this();
         setUser( user );
@@ -89,7 +90,7 @@ public class KeratinBot
         setRealName( realName );
         setServerAddress( serverAddress );
         setServerPort( serverPort );
-        setSslEnabled( sslEnabled );
+        setSslMode( sslMode );
         for ( Channel channel : initialChannels )
         {
             addChannel( channel.getName(), channel.getKey() );
@@ -104,7 +105,7 @@ public class KeratinBot
         IrcConnection conn = null;
         try
         {
-            conn = new IrcConnection( serverAddress, serverPort, sslEnabled );
+            conn = new IrcConnection( serverAddress, serverPort, sslMode );
         }
         catch ( UnknownHostException | InvalidPortException e )
         {
@@ -219,13 +220,13 @@ public class KeratinBot
     }
 
     /**
-     * Get if SSL sockets are in use (or are going to be used).
+     * Get the SSL socket use status/mode.
      * 
-     * @return true iff SSL sockets are in use
+     * @return {@link SslMode} value
      */
-    public boolean isSslEnabled()
+    public SslMode getSslMode()
     {
-        return sslEnabled;
+        return sslMode;
     }
 
     /**
@@ -280,13 +281,13 @@ public class KeratinBot
     }
 
     /**
-     * Set if SSL sockets are going to be used. No effect after connect() has been called.
+     * Set if and how SSL sockets are going to be used. No effect after connect() has been called.
      * 
-     * @param sslEnabled true iff SSL sockets are to be used
+     * @param sslMode {@link SslMode} value
      */
-    public void setSslEnabled( boolean sslEnabled )
+    public void setSslMode( SslMode sslMode )
     {
-        this.sslEnabled = sslEnabled;
+        this.sslMode = sslMode;
     }
 
     /**
