@@ -141,16 +141,11 @@ public class IrcConnection
     }
 
     /**
-     * Not implemented properly yet
+     * Deactivate the connection.
      */
     public void disconnect()
     {
-        if ( Boolean.parseBoolean( "true" ) )
-            throw new RuntimeException( "Not implemented" );
-
         Logger.info( "Disconnecting" );
-
-        bus.publish( new IrcDisconnect( bus, null ) );
 
         Logger.trace( "Stopping worker thread" );
         inputWorkerThread.interrupt();
@@ -162,11 +157,18 @@ public class IrcConnection
         {
         }
 
-        // This part probably won't work properly
         Logger.trace( "Shutting down event bus" );
         bus.shutdown();
-        bus = new MBassador<IrcEvent>( BusConfiguration.Default() );
+        bus = null;
 
         Logger.trace( "Done shut down" );
+    }
+
+    /**
+     * Put the IrcConnection in a state to be reused after calling disconnect().
+     */
+    public void reuse()
+    {
+        bus = new MBassador<IrcEvent>( BusConfiguration.Default() );
     }
 }

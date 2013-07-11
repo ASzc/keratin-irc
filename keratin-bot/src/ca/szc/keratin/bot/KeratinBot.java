@@ -55,16 +55,18 @@ public class KeratinBot
 
     private Map<String, Channel> channels;
 
-    private boolean initialConnectionMade;
+    private boolean connectionActive;
 
     private MBassador<IrcEvent> connectionBus;
+
+    IrcConnection connection;
 
     /**
      * Make a KeratinBot with no fields predefined. Must have fields set before calling connect().
      */
     public KeratinBot()
     {
-        initialConnectionMade = false;
+        connectionActive = false;
     }
 
     /**
@@ -150,7 +152,20 @@ public class KeratinBot
         }
 
         conn.connect();
-        initialConnectionMade = true;
+
+        connection = conn;
+        connectionActive = true;
+    }
+
+    /**
+     * End the connection.
+     */
+    public void disconnect()
+    {
+        connectionActive = false;
+        connection.disconnect();
+        connection = null;
+        connectionBus = null;
     }
 
     /**
@@ -220,7 +235,7 @@ public class KeratinBot
      */
     public void setNick( String nick )
     {
-        if ( initialConnectionMade )
+        if ( connectionActive )
         {
             try
             {
@@ -364,7 +379,7 @@ public class KeratinBot
             channels = new HashMap<String, Channel>();
         }
 
-        if ( initialConnectionMade )
+        if ( connectionActive )
         {
             try
             {
@@ -403,7 +418,7 @@ public class KeratinBot
      */
     public void remChannel( String name )
     {
-        if ( initialConnectionMade )
+        if ( connectionActive )
         {
             try
             {
