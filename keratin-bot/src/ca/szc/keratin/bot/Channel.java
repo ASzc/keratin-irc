@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2013 Alexander Szczuczko
+ *
+ * This file may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 package ca.szc.keratin.bot;
 
 import java.util.HashMap;
