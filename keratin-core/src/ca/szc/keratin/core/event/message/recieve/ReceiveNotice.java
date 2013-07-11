@@ -37,11 +37,22 @@ public class ReceiveNotice
     {
         super( bus, message );
 
-        sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+        if ( message.getPrefix() != null )
+        {
+            int splitPoint = message.getPrefix().indexOf( '!' );
+            if ( splitPoint != -1 )
+                sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
+            else
+                sender = message.getPrefix();
+        }
+        else
+            sender = "";
+
         if ( !message.getParams()[0].startsWith( "#" ) )
             channel = sender;
         else
             channel = message.getParams()[0];
+
         text = message.getParams()[1].substring( 1 );
     }
 
