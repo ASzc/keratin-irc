@@ -9,6 +9,8 @@ package ca.szc.keratin.bot;
 import java.util.LinkedList;
 import java.util.List;
 
+import ca.szc.keratin.core.net.IrcConnection.SslMode;
+
 
 /**
  * Facilitates easier management of multiple bots
@@ -26,7 +28,7 @@ public class MultiBotManager
 
     private int serverPort;
 
-    private boolean sslEnabled;
+    private SslMode sslMode;
 
     private Channel[] initialChannels;
 
@@ -51,7 +53,7 @@ public class MultiBotManager
      * @param sslEnabled
      */
     public MultiBotManager( String user, String nick, String realName, String serverAddress, int serverPort,
-                            boolean sslEnabled, String[] initialChannels )
+                            SslMode sslMode, String[] initialChannels )
     {
         this();
         setUser( user );
@@ -59,7 +61,7 @@ public class MultiBotManager
         setRealName( realName );
         setServerAddress( serverAddress );
         setServerPort( serverPort );
-        setSslEnabled( sslEnabled );
+        setSslMode( sslMode );
     }
 
     /**
@@ -70,7 +72,7 @@ public class MultiBotManager
      */
     public KeratinBot newBot()
     {
-        return newBot( user, nick, realName, serverAddress, serverPort, sslEnabled, initialChannels );
+        return newBot( user, nick, realName, serverAddress, serverPort, sslMode, initialChannels );
     }
 
     /**
@@ -79,9 +81,9 @@ public class MultiBotManager
      * @return A reference to the new bot, also stored internally.
      */
     public KeratinBot newBot( String user, String nick, String realName, String serverAddress, int serverPort,
-                              boolean sslEnabled, Channel[] initialChannels )
+                              SslMode sslMode, Channel[] initialChannels )
     {
-        KeratinBot bot = new KeratinBot( user, nick, realName, serverAddress, serverPort, sslEnabled, initialChannels );
+        KeratinBot bot = new KeratinBot( user, nick, realName, serverAddress, serverPort, sslMode, initialChannels );
 
         botList.add( bot );
 
@@ -124,9 +126,9 @@ public class MultiBotManager
         return user;
     }
 
-    public boolean isSslEnabled()
+    public SslMode getSslMode()
     {
-        return sslEnabled;
+        return sslMode;
     }
 
     public void setNick( String nick )
@@ -149,9 +151,9 @@ public class MultiBotManager
         this.serverPort = serverPort;
     }
 
-    public void setSslEnabled( boolean sslEnabled )
+    public void setSslMode( SslMode sslMode )
     {
-        this.sslEnabled = sslEnabled;
+        this.sslMode = sslMode;
     }
 
     public void setUser( String user )
