@@ -74,7 +74,7 @@ public class IrcConnection
     public IrcConnection( String address, int port, boolean ssl )
         throws UnknownHostException, InvalidPortException
     {
-        this( InetAddress.getByName( address ), port, false );
+        this( InetAddress.getByName( address ), port, ssl );
     }
 
     /**
