@@ -63,7 +63,7 @@ public class KeratinBot
 
     private MBassador<IrcEvent> connectionBus;
 
-    IrcConnection connection;
+    private IrcConnection connection;
 
     private DelegateConnection delegateConn;
 
