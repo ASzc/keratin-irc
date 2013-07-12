@@ -16,11 +16,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import net.engio.mbassy.bus.MBassador;
 
 import org.pmw.tinylog.Logger;
 
+import ca.szc.keratin.bot.DelegateConnection.ConnectionRunnable;
 import ca.szc.keratin.bot.annotation.AssignedBot;
 import ca.szc.keratin.bot.annotation.HandlerContainerDetector;
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
@@ -30,6 +32,7 @@ import ca.szc.keratin.core.event.message.send.SendJoin;
 import ca.szc.keratin.core.event.message.send.SendMode;
 import ca.szc.keratin.core.event.message.send.SendNick;
 import ca.szc.keratin.core.event.message.send.SendPart;
+import ca.szc.keratin.core.event.message.send.SendPrivmsg;
 import ca.szc.keratin.core.net.InvalidPortException;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
@@ -61,6 +64,8 @@ public class KeratinBot
     private MBassador<IrcEvent> connectionBus;
 
     IrcConnection connection;
+
+    private DelegateConnection delegateConn;
 
     /**
      * Make a KeratinBot with no fields predefined. Must have fields set before calling connect().
@@ -153,6 +158,8 @@ public class KeratinBot
         }
 
         conn.connect();
+
+        delegateConn = new DelegateConnection( serverAddress, serverPort, sslMode, user, nick + "-del", realName );
 
         connection = conn;
         connectionActive = true;
@@ -496,6 +503,66 @@ public class KeratinBot
                                   channelName );
                 }
             }
+        }
+    }
+
+    /**
+     * Use a seperate connection to send a PRIVMSG as a different nick to a certain channel.
+     * 
+     * @param nick The nick to use
+     * @param channel The name of the channel. The bot must be in that channel.
+     * @param text The text to send. Send multiple PRIVMSGs by including \n characters.
+     */
+    public void sendPrivmsgAs( String nick, String channel, final String text )
+    {
+        sendPrivmsgAs( nick, getChannel( channel ), text );
+    }
+
+    /**
+     * Use a seperate connection to send a PRIVMSG as a different nick to a certain channel.
+     * 
+     * @param nick The nick to use
+     * @param channel The channel to use
+     * @param text The text to send. Send multiple PRIVMSGs by including \n characters.
+     */
+    public void sendPrivmsgAs( final String nick, final Channel channel, final String text )
+    {
+        try
+        {
+            delegateConn.offer( new ConnectionRunnable()
+            {
+                @Override
+                public void run( IrcConnection conn )
+                {
+                    MBassador<IrcEvent> bus = conn.getEventBus();
+
+                    try
+                    {
+                        bus.publish( new SendNick( bus, nick ) );
+                        bus.publish( new SendJoin( bus, channel.getName() ) );
+                        try
+                        {
+                            // Despite the messages being sent in order on our end, sometimes the server doesn't catch
+                            // up to the channel join in time. Wait a short arbitrary period to make this less likely.
+                            Thread.sleep( 50 );
+                        }
+                        catch ( InterruptedException e )
+                        {
+                        }
+                        bus.publish( new SendPrivmsg( bus, channel.getName(), text ) );
+                        bus.publish( new SendPart( bus, channel.getName() ) );
+                    }
+                    catch ( InvalidMessagePrefixException | InvalidMessageCommandException
+                                    | InvalidMessageParamException e )
+                    {
+                        Logger.error( e, "Could not send an IRC message" );
+                    }
+                }
+            }, 10, TimeUnit.SECONDS );
+        }
+        catch ( InterruptedException e )
+        {
+            Logger.error( e, "Could not enqueue delagate task" );
         }
     }
 }
