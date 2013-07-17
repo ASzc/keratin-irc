@@ -71,6 +71,7 @@ public class DelegateConnection
             @Override
             public void run()
             {
+                Thread.currentThread().setName( "DelegateConnection" );
                 while ( !Thread.interrupted() )
                 {
                     try

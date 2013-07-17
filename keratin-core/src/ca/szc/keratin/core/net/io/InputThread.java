@@ -65,6 +65,7 @@ public class InputThread
     @Override
     public void run()
     {
+        Thread.currentThread().setName( "InputThread" );
         Logger.trace( "Input thread running" );
         bus.subscribe( this );
 
