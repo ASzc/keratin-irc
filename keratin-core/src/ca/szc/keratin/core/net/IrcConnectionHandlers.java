@@ -21,6 +21,10 @@ import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
 import ca.szc.keratin.core.event.message.recieve.ReceivePing;
+import ca.szc.keratin.core.event.message.send.SendPing;
+import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.message.InvalidMessageParamException;
+import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 
 /**
  * Event handlers for connection events
@@ -44,7 +48,7 @@ public class IrcConnectionHandlers
     @Handler
     private void reconnectHandler( IrcDisconnect event )
     {
-        MBassador<IrcEvent> bus = event.getBus();
+        final MBassador<IrcEvent> bus = event.getBus();
 
         Logger.trace( "Making sure the old socket is closed" );
         try
@@ -59,6 +63,35 @@ public class IrcConnectionHandlers
         {
             Logger.trace( "Error when closing socket" );
         }
+
+        new Thread()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName( "PingToServer" );
+                while ( !Thread.interrupted() )
+                {
+                    try
+                    {
+                        bus.publishAsync( new SendPing( bus, "asd" ) );
+                    }
+                    catch ( InvalidMessagePrefixException | InvalidMessageCommandException
+                                    | InvalidMessageParamException e )
+                    {
+                        Logger.error( e, "Couldn't send ping message." );
+                    }
+                    try
+                    {
+                        Thread.sleep( 20000 );
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        break;
+                    }
+                }
+            }
+        }.start();
 
         Logger.info( "Attempting to reconnect" );
         newConnection( bus );
@@ -93,6 +126,9 @@ public class IrcConnectionHandlers
     @Handler
     private void handlePingPong( ReceivePing event )
     {
+        // TODO: need to record when pings happen and use a thread or something to monitor that they are coming in to
+        // detect connection loss.
+
         Logger.trace( "Handling PONG by sending echo PING" );
         event.pong();
     }
