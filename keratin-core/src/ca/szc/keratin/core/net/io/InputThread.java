@@ -91,71 +91,75 @@ public class InputThread
 
                             IrcMessageEvent messageEvent = null;
 
-                            // INVITE
-                            if ( ReceiveInvite.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveInvite( bus, message );
-
-                            // JOIN
-                            else if ( ReceiveJoin.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveJoin( bus, message );
-
-                            // KICK
-                            else if ( ReceiveKick.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveKick( bus, message );
-
-                            // MODE
-                            else if ( ReceiveMode.COMMAND.equals( command ) )
+                            try
                             {
-                                if ( message.getParams().length == 2 )
-                                    messageEvent = new ReceiveUserMode( bus, message );
+                                // INVITE
+                                if ( ReceiveInvite.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveInvite( bus, message );
+
+                                // JOIN
+                                else if ( ReceiveJoin.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveJoin( bus, message );
+
+                                // KICK
+                                else if ( ReceiveKick.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveKick( bus, message );
+
+                                // MODE
+                                else if ( ReceiveMode.COMMAND.equals( command ) )
+                                {
+                                    if ( message.getParams().length > 2 )
+                                        messageEvent = new ReceiveUserMode( bus, message );
+                                    else
+                                        messageEvent = new ReceiveChannelMode( bus, message );
+                                }
+
+                                // NICK
+                                else if ( ReceiveNick.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveNick( bus, message );
+
+                                // NOTICE
+                                else if ( ReceiveNotice.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveNotice( bus, message );
+
+                                // PART
+                                else if ( ReceivePart.COMMAND.equals( command ) )
+                                    messageEvent = new ReceivePart( bus, message );
+
+                                // PING
+                                else if ( ReceivePing.COMMAND.equals( command ) )
+                                    messageEvent = new ReceivePing( bus, message );
+
+                                // PONG
+                                else if ( ReceivePong.COMMAND.equals( command ) )
+                                    messageEvent = new ReceivePong( bus, message );
+
+                                // PRIVMSG
+                                else if ( ReceivePrivmsg.COMMAND.equals( command ) )
+                                    messageEvent = new ReceivePrivmsg( bus, message );
+
+                                // QUIT
+                                else if ( ReceiveQuit.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveQuit( bus, message );
+
+                                // replies
+                                else if ( isDigits( command ) )
+                                    messageEvent = new ReceiveReply( bus, message );
+
+                                // TOPIC
+                                else if ( ReceiveTopic.COMMAND.equals( command ) )
+                                    messageEvent = new ReceiveTopic( bus, message );
+
+                                // others
                                 else
-                                    messageEvent = new ReceiveChannelMode( bus, message );
+                                    Logger.error( "Unknown message '" + message.toString().replace( "\n", "\\n" ) + "'" );
                             }
-
-                            // NICK
-                            else if ( ReceiveNick.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveNick( bus, message );
-
-                            // NOTICE
-                            else if ( ReceiveNotice.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveNotice( bus, message );
-
-                            // PART
-                            else if ( ReceivePart.COMMAND.equals( command ) )
-                                messageEvent = new ReceivePart( bus, message );
-
-                            // PING
-                            else if ( ReceivePing.COMMAND.equals( command ) )
-                                messageEvent = new ReceivePing( bus, message );
-
-                            // PONG
-                            else if ( ReceivePong.COMMAND.equals( command ) )
-                                messageEvent = new ReceivePong( bus, message );
-
-                            // PRIVMSG
-                            else if ( ReceivePrivmsg.COMMAND.equals( command ) )
-                                messageEvent = new ReceivePrivmsg( bus, message );
-
-                            // QUIT
-                            else if ( ReceiveQuit.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveQuit( bus, message );
-
-                            // replies
-                            else if ( isDigits( command ) )
-                                messageEvent = new ReceiveReply( bus, message );
-
-                            // TOPIC
-                            else if ( ReceiveTopic.COMMAND.equals( command ) )
-                                messageEvent = new ReceiveTopic( bus, message );
-
-                            // others
-                            else
+                            catch ( NullPointerException e )
                             {
-                                Logger.error( "Unknown message '" + message.toString().replace( "\n", "\\n" ) + "'" );
-                                message = null;
+                                Logger.error( e, "Error when creating message event for message " + message );
                             }
 
-                            if ( message != null )
+                            if ( messageEvent != null )
                             {
                                 bus.publishAsync( messageEvent );
                             }
