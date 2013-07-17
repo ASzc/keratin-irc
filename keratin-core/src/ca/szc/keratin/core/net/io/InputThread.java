@@ -145,7 +145,10 @@ public class InputThread
 
                             // others
                             else
+                            {
                                 Logger.error( "Unknown message '" + message.toString().replace( "\n", "\\n" ) + "'" );
+                                message = null;
+                            }
 
                             if ( message != null )
                             {
