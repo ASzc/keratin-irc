@@ -30,6 +30,7 @@ import ca.szc.keratin.core.event.message.recieve.ReceiveNick;
 import ca.szc.keratin.core.event.message.recieve.ReceiveNotice;
 import ca.szc.keratin.core.event.message.recieve.ReceivePart;
 import ca.szc.keratin.core.event.message.recieve.ReceivePing;
+import ca.szc.keratin.core.event.message.recieve.ReceivePong;
 import ca.szc.keratin.core.event.message.recieve.ReceivePrivmsg;
 import ca.szc.keratin.core.event.message.recieve.ReceiveQuit;
 import ca.szc.keratin.core.event.message.recieve.ReceiveReply;
@@ -126,6 +127,10 @@ public class InputThread
                             // PING
                             else if ( ReceivePing.COMMAND.equals( command ) )
                                 messageEvent = new ReceivePing( bus, message );
+
+                            // PONG
+                            else if ( ReceivePong.COMMAND.equals( command ) )
+                                messageEvent = new ReceivePong( bus, message );
 
                             // PRIVMSG
                             else if ( ReceivePrivmsg.COMMAND.equals( command ) )
