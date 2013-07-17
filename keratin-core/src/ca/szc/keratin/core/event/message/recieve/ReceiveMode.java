@@ -37,7 +37,9 @@ public class ReceiveMode
         target = params[0];
         flags = params[1];
 
-        flagParams = params.length > 2 ? Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) ) : null;
+        flagParams =
+            params.length > 2 ? Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) )
+                            : Arrays.asList( params );
 
         String firstFlagParam = flagParams.get( 0 );
         if ( firstFlagParam.startsWith( ":" ) )

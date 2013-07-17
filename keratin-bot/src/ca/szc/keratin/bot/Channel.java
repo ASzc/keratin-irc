@@ -6,10 +6,9 @@
  */
 package ca.szc.keratin.bot;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.engio.mbassy.listener.Handler;
 import ca.szc.keratin.bot.User.PrivLevel;
@@ -35,7 +34,7 @@ public class Channel
     /**
      * Map with key of IRC nickname to corresponding User
      */
-    private volatile Map<String, User> nicks;
+    private final ConcurrentHashMap<String, User> nicks;
 
     private final Object nicksMutex = new Object();
 
@@ -47,7 +46,7 @@ public class Channel
     {
         this.name = channelName;
         this.key = channelKey;
-        nicks = new HashMap<String, User>();
+        nicks = new ConcurrentHashMap<String, User>();
     }
 
     /**

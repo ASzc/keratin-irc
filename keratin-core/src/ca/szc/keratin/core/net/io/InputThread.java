@@ -80,7 +80,7 @@ public class InputThread
                     String line = input.readLine();
                     if ( line != null )
                     {
-                        Logger.trace( "Got line " + line );
+                        // Logger.trace( "Got line " + line );
                         IrcMessage message = null;
                         try
                         {
@@ -108,7 +108,7 @@ public class InputThread
                                 // MODE
                                 else if ( ReceiveMode.COMMAND.equals( command ) )
                                 {
-                                    if ( message.getParams().length > 2 )
+                                    if ( message.getParams().length == 2 )
                                         messageEvent = new ReceiveUserMode( bus, message );
                                     else
                                         messageEvent = new ReceiveChannelMode( bus, message );
@@ -161,6 +161,8 @@ public class InputThread
 
                             if ( messageEvent != null )
                             {
+                                Logger.trace( "Publishing message event type: "
+                                    + messageEvent.getClass().getSimpleName() + ", content: " + messageEvent );
                                 bus.publishAsync( messageEvent );
                             }
 
