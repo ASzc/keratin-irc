@@ -11,9 +11,9 @@ import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
 import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.net.InvalidPortException;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
+import ca.szc.keratin.core.net.util.InvalidPortException;
 
 /**
  * A connection to be delagated short-term tasks. This is in the public API, but users should probably use

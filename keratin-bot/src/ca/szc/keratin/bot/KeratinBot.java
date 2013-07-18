@@ -33,12 +33,12 @@ import ca.szc.keratin.core.event.message.send.SendMode;
 import ca.szc.keratin.core.event.message.send.SendNick;
 import ca.szc.keratin.core.event.message.send.SendPart;
 import ca.szc.keratin.core.event.message.send.SendPrivmsg;
-import ca.szc.keratin.core.net.InvalidPortException;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
+import ca.szc.keratin.core.net.util.InvalidPortException;
 
 /**
  * A class for supporting IRC bots.
