@@ -21,7 +21,6 @@ import org.pmw.tinylog.Logger;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
 import ca.szc.keratin.core.net.io.InputThread;
-import ca.szc.keratin.core.net.io.IrcOutputHandler;
 
 public class IrcConnection
 {
@@ -35,7 +34,6 @@ public class IrcConnection
 
     /**
      * Defines the different use states of SSL. See the javadoc of the members for more information.
-     * 
      */
     public enum SslMode
     {
@@ -147,16 +145,13 @@ public class IrcConnection
         Logger.info( "Connecting" );
 
         Logger.trace( "Subscribing to event bus" );
-        bus.subscribe( new IrcConnectionHandlers( endpoint, socketFactory ) );
         bus.addErrorHandler( new BusErrorHandler() );
+        bus.subscribe( new IrcConnectionHandlers() );
         bus.subscribe( new DeadMessageHandler() );
 
-        Logger.trace( "Creating/starting input thread" );
-        inputWorkerThread = new InputThread( bus );
+        Logger.trace( "Creating/starting connection thread" );
+        inputWorkerThread = new InputThread( bus, endpoint, socketFactory );
         inputWorkerThread.start();
-
-        Logger.trace( "Registering output handler" );
-        new IrcOutputHandler( bus );
 
         Logger.trace( "Sending event to establish first connection" );
         bus.publish( new IrcDisconnect( bus, null ) );

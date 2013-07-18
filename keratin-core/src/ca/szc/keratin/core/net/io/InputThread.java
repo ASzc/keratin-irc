@@ -7,10 +7,17 @@
 package ca.szc.keratin.core.net.io;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+
+import javax.net.SocketFactory;
 
 import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
@@ -21,6 +28,7 @@ import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.IrcMessageEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
+import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.event.message.recieve.ReceiveChannelMode;
 import ca.szc.keratin.core.event.message.recieve.ReceiveInvite;
 import ca.szc.keratin.core.event.message.recieve.ReceiveJoin;
@@ -48,19 +56,84 @@ import ca.szc.keratin.core.net.message.IrcMessage;
 public class InputThread
     extends Thread
 {
+    private enum RunState
+    {
+        CONNECT, READ, DISCONNECT, END
+    }
+
+    private static final int SOCKET_TIMEOUT = 20000;
+
+    private static boolean isDigits( String str )
+    {
+        try
+        {
+            Integer.parseInt( str );
+            return true;
+        }
+        catch ( NumberFormatException e )
+        {
+            return false;
+        }
+    }
 
     private final MBassador<IrcEvent> bus;
 
-    private volatile boolean connected;
+    private final InetSocketAddress endpoint;
 
-    private BufferedReader input = null;
+    private final SocketFactory socketFactory;
 
-    private Socket socket;
+    private final Object outputMutex = new Object();
 
-    public InputThread( MBassador<IrcEvent> bus )
+    private BufferedWriter output;
+
+    public InputThread( MBassador<IrcEvent> bus, InetSocketAddress endpoint, SocketFactory socketFactory )
     {
         this.bus = bus;
-        connected = false;
+        this.endpoint = endpoint;
+        this.socketFactory = socketFactory;
+
+        bus.subscribe( this );
+    }
+
+    private void createOutput( Socket socket )
+        throws IOException
+    {
+        Logger.trace( "Creating output" );
+        OutputStream outputStream = socket.getOutputStream();
+        synchronized ( outputMutex )
+        {
+            output = new BufferedWriter( new OutputStreamWriter( outputStream, IoConfig.CHARSET ) );
+        }
+        Logger.trace( "Output created" );
+    }
+
+    /**
+     * Converts internal IrcMessage to a raw message and sends it.
+     * 
+     * @param messageToSend
+     */
+    @Handler
+    private void handleMessageSend( MessageSend messageToSend )
+    {
+        IrcMessage msg = messageToSend.getMessage();
+        String rawCommand = msg.toString();
+
+        if ( output != null )
+        {
+            try
+            {
+                Logger.trace( "Sending IRC message '" + rawCommand + "'" );
+                writeLine( rawCommand );
+            }
+            catch ( IOException e )
+            {
+                Logger.trace( "Error sending IRC message '" + rawCommand + "'" );
+            }
+        }
+        else
+        {
+            Logger.trace( "First connection has not been established, can't send IRC message '" + rawCommand + "'" );
+        }
     }
 
     @Override
@@ -68,23 +141,64 @@ public class InputThread
     {
         Thread.currentThread().setName( "InputThread" );
         Logger.trace( "Input thread running" );
-        bus.subscribe( this );
 
-        while ( !Thread.interrupted() )
+        RunState state = RunState.CONNECT;
+
+        Socket socket = null;
+        BufferedReader input = null;
+
+        while ( state != RunState.END )
         {
-            if ( connected )
+            if ( Thread.interrupted() )
             {
-                // Logger.trace( "Reading line from input" );
+                Logger.trace( "Interrupted, exiting" );
+                state = RunState.END;
+            }
+
+            if ( state == RunState.CONNECT )
+            {
+                try
+                {
+                    Logger.trace( "Creating/connecting socket" );
+                    socket = socketFactory.createSocket( endpoint.getAddress(), endpoint.getPort() );
+                    Logger.info( "Successfully connected socket" );
+
+                    socket.setSoTimeout( SOCKET_TIMEOUT );
+                    createOutput( socket );
+
+                    InputStream inputStream = socket.getInputStream();
+                    input = new BufferedReader( new InputStreamReader( inputStream, IoConfig.CHARSET ) );
+                    Logger.trace( "Input stream created" );
+
+                    bus.publishAsync( new IrcConnect( bus, socket ) );
+
+                    state = RunState.READ;
+                }
+                catch ( IOException e )
+                {
+                    Logger.error( e, "Failed to connect socket, sleeping before retrying." );
+                }
+
+                try
+                {
+                    Thread.sleep( IoConfig.WAIT_TIME );
+                }
+                catch ( InterruptedException e )
+                {
+                    state = RunState.END;
+                }
+            }
+            else if ( state == RunState.READ )
+            {
                 try
                 {
                     String line = input.readLine();
                     if ( line != null )
                     {
                         // Logger.trace( "Got line " + line );
-                        IrcMessage message = null;
                         try
                         {
-                            message = IrcMessage.parseMessage( line );
+                            IrcMessage message = IrcMessage.parseMessage( line );
                             // String prefix = message.getPrefix();
                             String command = message.getCommand();
                             // String[] params = message.getParams();
@@ -154,96 +268,97 @@ public class InputThread
                                 else
                                     Logger.error( "Unknown message '" + message.toString().replace( "\n", "\\n" ) + "'" );
                             }
-                            catch ( NullPointerException e )
+                            catch ( Exception e )
                             {
-                                Logger.error( e, "Error when creating message event for message " + message );
+                                Logger.error( "Error when creating message event, type: "
+                                    + messageEvent.getClass().getSimpleName() + ", content: " + messageEvent );
                             }
 
                             if ( messageEvent != null )
                             {
                                 Logger.trace( "Publishing message event type: "
                                     + messageEvent.getClass().getSimpleName() + ", content: " + messageEvent );
+                                // TODO publication timeout
                                 bus.publishAsync( messageEvent );
                             }
-
-                            // Logger.trace( "Done sending parsed message to bus" );
                         }
                         catch ( IndexOutOfBoundsException | InvalidMessagePrefixException
                                         | InvalidMessageCommandException | InvalidMessageParamException e )
                         {
-                            Logger.error( e, "Couldn't publish parsed message '{0}' from line '{1}'", message, line );
+                            Logger.error( e, "Couldn't create IrcMessage instance out of parsed data from line " + line );
                         }
                         catch ( InvalidMessageException e )
                         {
-                            Logger.error( e, "Couldn't parse line '{0}'", line );
+                            Logger.error( e, "Couldn't parse line " + line );
                         }
-
-                        // Logger.trace( "Line processed from input" );
                     }
                     else
                     {
+                        // Definite connection loss
                         Logger.error( "Input end of stream" );
-                        connected = false;
-                        bus.publishAsync( new IrcDisconnect( bus, socket ) );
+                        state = RunState.DISCONNECT;
+                    }
+                }
+                catch ( SocketTimeoutException e )
+                {
+                    Logger.trace( e, "Read line timed out, checking if connection is active" );
+
+                    // Sending some data is pretty much the only way to tell if the TCP connection is still alive. We
+                    // don't really care about the reply, just that sending it doesn't cause a connection error.
+                    try
+                    {
+                        writeLine( "PING client" );
+                    }
+                    catch ( IOException e1 )
+                    {
+                        state = RunState.DISCONNECT;
                     }
                 }
                 catch ( IOException e )
                 {
                     Logger.error( e, "Could not read line" );
+                    state = RunState.DISCONNECT;
+                }
+            }
+            else if ( state == RunState.DISCONNECT )
+            {
+                if ( socket != null && !socket.isClosed() )
+                {
                     try
                     {
-                        Thread.sleep( IoConfig.WAIT_TIME );
+                        socket.close();
                     }
-                    catch ( InterruptedException e1 )
+                    catch ( IOException e )
                     {
+                        Logger.trace( e, "Error when closing open socket" );
                     }
                 }
+
+                bus.publishAsync( new IrcDisconnect( bus, socket ) );
+
+                Logger.info( "Disconnected, attempting reconnect." );
+
+                state = RunState.CONNECT;
             }
-            else
+        }
+        Logger.trace( "Run loop ends, thread exiting" );
+    }
+
+    private void writeLine( String line )
+        throws IOException
+    {
+        synchronized ( outputMutex )
+        {
+            output.write( line + "\n" );
+
+            try
             {
-                Logger.trace( "Socket is not connected. Sleeping." );
-                try
-                {
-                    Thread.sleep( IoConfig.WAIT_TIME );
-                }
-                catch ( InterruptedException e )
-                {
-                }
+                output.flush();
+            }
+            catch ( IOException e )
+            {
+                Logger.error( e, "Could not flush output stream" );
             }
         }
-        Logger.trace( "Interrupted, exiting" );
-    }
-
-    private boolean isDigits( String str )
-    {
-        try
-        {
-            Integer.parseInt( str );
-            return true;
-        }
-        catch ( NumberFormatException e )
-        {
-            return false;
-        }
-    }
-
-    @Handler( priority = Integer.MIN_VALUE )
-    public void handleConnect( IrcConnect event )
-    {
-        socket = event.getSocket();
-
-        Logger.trace( "Creating input stream" );
-        try
-        {
-            InputStream inputStream = socket.getInputStream();
-            input = new BufferedReader( new InputStreamReader( inputStream, IoConfig.CHARSET ) );
-            Logger.trace( "Input stream created" );
-        }
-        catch ( IOException e )
-        {
-            Logger.error( e, "Could not open input stream" );
-        }
-
-        connected = true;
     }
 }
