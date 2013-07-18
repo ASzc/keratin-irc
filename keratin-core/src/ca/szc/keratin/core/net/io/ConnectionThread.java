@@ -284,7 +284,6 @@ public class ConnectionThread
                             {
                                 Logger.trace( "Publishing message event type: "
                                     + messageEvent.getClass().getSimpleName() + ", content: " + messageEvent );
-                                // TODO publication timeout
                                 bus.publishAsync( messageEvent );
                             }
                         }
