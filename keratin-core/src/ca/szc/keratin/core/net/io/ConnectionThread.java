@@ -53,7 +53,7 @@ import ca.szc.keratin.core.net.message.IrcMessage;
 /**
  * Receives lines from the socket and sends out MessageRecieve events
  */
-public class InputThread
+public class ConnectionThread
     extends Thread
 {
     private enum RunState
@@ -86,7 +86,7 @@ public class InputThread
 
     private BufferedWriter output;
 
-    public InputThread( MBassador<IrcEvent> bus, InetSocketAddress endpoint, SocketFactory socketFactory )
+    public ConnectionThread( MBassador<IrcEvent> bus, InetSocketAddress endpoint, SocketFactory socketFactory )
     {
         this.bus = bus;
         this.endpoint = endpoint;

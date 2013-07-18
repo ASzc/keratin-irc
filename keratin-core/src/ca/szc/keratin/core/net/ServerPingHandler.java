@@ -12,10 +12,7 @@ import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.message.recieve.ReceivePing;
 
-/**
- * Event handlers for connection events
- */
-public class IrcConnectionHandlers
+public class ServerPingHandler
 {
     @Handler
     private void handlePingPong( ReceivePing event )

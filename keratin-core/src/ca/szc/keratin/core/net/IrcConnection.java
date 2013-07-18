@@ -19,8 +19,7 @@ import net.engio.mbassy.bus.MBassador;
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.connection.IrcDisconnect;
-import ca.szc.keratin.core.net.io.InputThread;
+import ca.szc.keratin.core.net.io.ConnectionThread;
 
 public class IrcConnection
 {
@@ -146,15 +145,12 @@ public class IrcConnection
 
         Logger.trace( "Subscribing to event bus" );
         bus.addErrorHandler( new BusErrorHandler() );
-        bus.subscribe( new IrcConnectionHandlers() );
+        bus.subscribe( new ServerPingHandler() );
         bus.subscribe( new DeadMessageHandler() );
 
         Logger.trace( "Creating/starting connection thread" );
-        inputWorkerThread = new InputThread( bus, endpoint, socketFactory );
+        inputWorkerThread = new ConnectionThread( bus, endpoint, socketFactory );
         inputWorkerThread.start();
-
-        Logger.trace( "Sending event to establish first connection" );
-        bus.publish( new IrcDisconnect( bus, null ) );
 
         Logger.trace( "Done set up" );
     }
