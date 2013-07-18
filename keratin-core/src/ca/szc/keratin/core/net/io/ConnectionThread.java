@@ -306,7 +306,7 @@ public class ConnectionThread
                 }
                 catch ( SocketTimeoutException e )
                 {
-                    Logger.trace( e, "Read line timed out, checking if connection is active" );
+                    Logger.trace( "Read line timed out, checking if connection is active" );
 
                     // Sending some data is pretty much the only way to tell if the TCP connection is still alive. We
                     // don't really care about the reply, just that sending it doesn't cause a connection error.
