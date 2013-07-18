@@ -56,12 +56,18 @@ import ca.szc.keratin.core.net.message.IrcMessage;
 public class ConnectionThread
     extends Thread
 {
+    /**
+     * States for the run loop
+     */
     private enum RunState
     {
         CONNECT, READ, DISCONNECT, END
     }
 
-    private static final int SOCKET_TIMEOUT = 20000;
+    /**
+     * How long a read on the socket will block before throwing SocketTimeoutException
+     */
+    private static final int SOCKET_TIMEOUT = 20 * 1000;
 
     private static boolean isDigits( String str )
     {
