@@ -23,6 +23,7 @@ import ca.szc.keratin.core.net.handlers.BusErrorHandler;
 import ca.szc.keratin.core.net.handlers.DeadMessageHandler;
 import ca.szc.keratin.core.net.handlers.ServerPingHandler;
 import ca.szc.keratin.core.net.io.ConnectionThread;
+import ca.szc.keratin.core.net.mbassador.TimeoutSubscriptionFactory;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 import ca.szc.keratin.core.net.util.TrustAllTrustManager;
 
@@ -121,7 +122,9 @@ public class IrcConnection
             throw new InvalidPortException( e );
         }
 
-        bus = new MBassador<IrcEvent>( BusConfiguration.Default() );
+        BusConfiguration busConf = BusConfiguration.Default();
+        busConf.setSubscriptionFactory( new TimeoutSubscriptionFactory() );
+        bus = new MBassador<IrcEvent>( busConf );
 
         if ( SslMode.ON.equals( ssl ) )
             socketFactory = SSLSocketFactory.getDefault();
