@@ -247,7 +247,7 @@ public class KeratinBot
         {
             try
             {
-                connectionBus.publish( new SendNick( connectionBus, nick ) );
+                connectionBus.publishAsync( new SendNick( connectionBus, nick ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
@@ -392,9 +392,9 @@ public class KeratinBot
             try
             {
                 if ( channel.getKey() == null )
-                    connectionBus.publish( new SendJoin( connectionBus, channel.getName() ) );
+                    connectionBus.publishAsync( new SendJoin( connectionBus, channel.getName() ) );
                 else
-                    connectionBus.publish( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
+                    connectionBus.publishAsync( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
@@ -430,7 +430,7 @@ public class KeratinBot
         {
             try
             {
-                connectionBus.publish( new SendPart( connectionBus, name ) );
+                connectionBus.publishAsync( new SendPart( connectionBus, name ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
@@ -450,7 +450,7 @@ public class KeratinBot
     {
         try
         {
-            connectionBus.publish( new SendMode( connectionBus, channelName, "+o", nick ) );
+            connectionBus.publishAsync( new SendMode( connectionBus, channelName, "+o", nick ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
@@ -495,7 +495,7 @@ public class KeratinBot
             {
                 try
                 {
-                    connectionBus.publish( new SendMode( connectionBus, paramArray ) );
+                    connectionBus.publishAsync( new SendMode( connectionBus, paramArray ) );
                 }
                 catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
                 {
@@ -549,8 +549,8 @@ public class KeratinBot
                         catch ( InterruptedException e )
                         {
                         }
-                        bus.publish( new SendPrivmsg( bus, channel.getName(), text ) );
-                        bus.publish( new SendPart( bus, channel.getName() ) );
+                        bus.publishAsync( new SendPrivmsg( bus, channel.getName(), text ) );
+                        bus.publishAsync( new SendPart( bus, channel.getName() ) );
                     }
                     catch ( InvalidMessagePrefixException | InvalidMessageCommandException
                                     | InvalidMessageParamException e )

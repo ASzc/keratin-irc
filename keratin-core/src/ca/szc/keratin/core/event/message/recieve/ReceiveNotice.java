@@ -83,7 +83,7 @@ public class ReceiveNotice
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getBus().publish( new SendNotice( getBus(), channel, line ) );
+                getBus().publishAsync( new SendNotice( getBus(), channel, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
@@ -103,7 +103,7 @@ public class ReceiveNotice
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getBus().publish( new SendNotice( getBus(), sender, line ) );
+                getBus().publishAsync( new SendNotice( getBus(), sender, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {

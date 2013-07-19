@@ -54,9 +54,9 @@ public class ManageChannels
             try
             {
                 if ( channel.getKey() == null )
-                    bus.publish( new SendJoin( bus, channel.getName() ) );
+                    bus.publishAsync( new SendJoin( bus, channel.getName() ) );
                 else
-                    bus.publish( new SendJoin( bus, channel.getName(), channel.getKey() ) );
+                    bus.publishAsync( new SendJoin( bus, channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {

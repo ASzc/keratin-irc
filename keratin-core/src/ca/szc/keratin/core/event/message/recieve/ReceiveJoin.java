@@ -59,7 +59,7 @@ public class ReceiveJoin
     {
         try
         {
-            getBus().publish( new SendPrivmsg( getBus(), joiner, reply ) );
+            getBus().publishAsync( new SendPrivmsg( getBus(), joiner, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
@@ -78,7 +78,7 @@ public class ReceiveJoin
     {
         try
         {
-            getBus().publish( new SendPrivmsg( getBus(), channel, reply ) );
+            getBus().publishAsync( new SendPrivmsg( getBus(), channel, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {

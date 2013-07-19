@@ -77,7 +77,7 @@ public class ReceivePrivmsg
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getBus().publish( new SendPrivmsg( getBus(), channel, line ) );
+                getBus().publishAsync( new SendPrivmsg( getBus(), channel, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
@@ -97,7 +97,7 @@ public class ReceivePrivmsg
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getBus().publish( new SendPrivmsg( getBus(), sender, line ) );
+                getBus().publishAsync( new SendPrivmsg( getBus(), sender, line ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
