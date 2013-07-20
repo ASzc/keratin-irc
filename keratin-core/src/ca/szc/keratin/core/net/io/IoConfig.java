@@ -7,6 +7,7 @@
 package ca.szc.keratin.core.net.io;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Contains static input/output configuration
@@ -18,7 +19,7 @@ public class IoConfig
     {
     }
 
-    public static final Charset CHARSET = Charset.forName( "UTF-8" );
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static final int WAIT_TIME = 5000;
 
