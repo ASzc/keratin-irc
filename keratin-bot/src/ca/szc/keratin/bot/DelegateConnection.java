@@ -3,14 +3,17 @@ package ca.szc.keratin.bot;
 import java.net.UnknownHostException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import net.engio.mbassy.bus.MBassador;
+import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
 import ca.szc.keratin.core.event.IrcEvent;
+import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
 import ca.szc.keratin.core.net.util.InvalidPortException;
@@ -72,13 +75,22 @@ public class DelegateConnection
             public void run()
             {
                 Thread.currentThread().setName( "DelegateConnection" );
+                Logger.trace( "Delegate connection thread running" );
+
                 while ( !Thread.interrupted() )
                 {
                     try
                     {
                         ConnectionRunnable task = taskQueue.take();
                         Logger.trace( "Got delegate connection task" );
-                        task.run( getConnection() );
+                        try
+                        {
+                            task.run( getConnection() );
+                        }
+                        catch ( Exception e )
+                        {
+                            Logger.error( e, "Delegate task threw an exception" );
+                        }
                     }
                     catch ( InterruptedException e )
                     {
@@ -108,8 +120,30 @@ public class DelegateConnection
                 MBassador<IrcEvent> bus = conn.getEventBus();
                 bus.subscribe( new ConnectionPreamble( user, nick, realName ) );
 
-                conn.connect();
+                // So up so we can wait for the connection to be established
+                final Semaphore connectionEstablished = new Semaphore( 0 );
+                bus.subscribe( new Object()
+                {
+                    @Handler
+                    private void awaitConnection( IrcConnect event )
+                    {
+                        connectionEstablished.release();
+                    }
+                } );
+
                 connection = conn;
+                conn.connect();
+
+                Logger.trace( "Waiting for the connection to be established" );
+                try
+                {
+                    connectionEstablished.acquire();
+                }
+                catch ( InterruptedException e )
+                {
+                    Logger.trace( e, "Interrupted while waiting for the connection to be established" );
+                }
+                Logger.trace( "Connection established" );
             }
             catch ( UnknownHostException | InvalidPortException e )
             {

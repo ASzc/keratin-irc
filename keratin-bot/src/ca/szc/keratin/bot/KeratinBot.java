@@ -16,7 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 
 import net.engio.mbassy.bus.MBassador;
 
@@ -247,13 +246,13 @@ public class KeratinBot
             try
             {
                 outputQueue.nick( nick );
-                this.nick = nick;
             }
             catch ( InvalidMessageParamException e )
             {
                 Logger.error( e, "Error creating IRC message" );
             }
         }
+        this.nick = nick;
     }
 
     /**
@@ -507,21 +506,13 @@ public class KeratinBot
      * @param channel The name of the channel. The bot must be in that channel.
      * @param text The text to send. Send multiple PRIVMSGs by including \n characters.
      */
-    public void sendPrivmsgAs( String nick, String channel, final String text )
+    public void sendPrivmsgAs( final String nick, final String channel, final String text )
     {
-        sendPrivmsgAs( nick, getChannel( channel ), text );
-    }
-
-    /**
-     * Use a separate connection to send a PRIVMSG as a different nick to a certain channel.
-     * 
-     * @param nick The nick to use
-     * @param channel The channel to use
-     * @param text The text to send. Send multiple PRIVMSGs by including \n characters.
-     */
-    public void sendPrivmsgAs( final String nick, final Channel channel, final String text )
-    {
-        try
+        if ( channel.startsWith( "#" ) )
+        {
+            sendPrivmsgAs( nick, getChannel( channel ), text );
+        }
+        else
         {
             delegateConn.offer( new ConnectionRunnable()
             {
@@ -538,15 +529,7 @@ public class KeratinBot
                         List<IrcMessage> messageList = new LinkedList<IrcMessage>();
 
                         messageList.add( SendMessage.nick( nick ) );
-
-                        String channelName = channel.getName();
-                        if ( channel.getKey() == null )
-                            messageList.add( SendMessage.join( channelName ) );
-                        else
-                            messageList.add( SendMessage.join( channelName, channel.getKey() ) );
-
-                        messageList.add( SendMessage.privmsg( channelName, text ) );
-                        messageList.add( SendMessage.part( channelName ) );
+                        messageList.add( SendMessage.privmsg( channel, text ) );
 
                         for ( IrcMessage message : messageList )
                             outputQueue.offer( message );
@@ -556,11 +539,52 @@ public class KeratinBot
                         Logger.error( e, "Error creating IRC messages" );
                     }
                 }
-            }, 5, TimeUnit.SECONDS );
+            } );
         }
-        catch ( InterruptedException e )
+    }
+
+    /**
+     * Use a separate connection to send a PRIVMSG as a different nick to a certain channel.
+     * 
+     * @param nick The nick to use
+     * @param channel The channel to use
+     * @param text The text to send. Send multiple PRIVMSGs by including \n characters.
+     */
+    public void sendPrivmsgAs( final String nick, final Channel channel, final String text )
+    {
+        delegateConn.offer( new ConnectionRunnable()
         {
-            Logger.error( e, "Could not enqueue delagate task" );
-        }
+            @Override
+            public void run( IrcConnection conn )
+            {
+                Logger.trace( "sendPrivmsgAs runnable running" );
+
+                OutputQueue outputQueue = conn.getOutputQueue();
+
+                try
+                {
+                    // Send as one block or not at all (an Exception will stop offer from being called)
+                    List<IrcMessage> messageList = new LinkedList<IrcMessage>();
+
+                    messageList.add( SendMessage.nick( nick ) );
+
+                    String channelName = channel.getName();
+                    if ( channel.getKey() == null )
+                        messageList.add( SendMessage.join( channelName ) );
+                    else
+                        messageList.add( SendMessage.join( channelName, channel.getKey() ) );
+
+                    messageList.add( SendMessage.privmsg( channelName, text ) );
+                    messageList.add( SendMessage.part( channelName ) );
+
+                    for ( IrcMessage message : messageList )
+                        outputQueue.offer( message );
+                }
+                catch ( InvalidMessageParamException e )
+                {
+                    Logger.error( e, "Error creating IRC messages" );
+                }
+            }
+        } );
     }
 }
