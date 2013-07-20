@@ -6,8 +6,6 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.message.MessageReceive;
@@ -15,9 +13,8 @@ import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
 import ca.szc.keratin.core.misc.LineWrap;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceivePrivmsg
@@ -32,7 +29,7 @@ public class ReceivePrivmsg
 
     private final String text;
 
-    public ReceivePrivmsg( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceivePrivmsg( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
@@ -65,9 +62,9 @@ public class ReceivePrivmsg
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", channel, line ) );
+                getReplyQueue().privmsg( channel, line );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }
@@ -85,9 +82,9 @@ public class ReceivePrivmsg
         try
         {
             for ( String line : LineWrap.wrap( reply ) )
-                getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", sender, line ) );
+                getReplyQueue().privmsg( sender, line );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }

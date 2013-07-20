@@ -7,10 +7,9 @@
 package ca.szc.keratin.core.event.connection;
 
 import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
 
 import ca.szc.keratin.core.event.IrcConnectionEvent;
-import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.io.OutputQueue;
 
 /**
  * Socket has disconnected
@@ -19,7 +18,7 @@ public class IrcDisconnect
     extends IrcConnectionEvent
 {
 
-    public IrcDisconnect( BlockingQueue<IrcMessage> replyQueue, Socket socket )
+    public IrcDisconnect( OutputQueue replyQueue, Socket socket )
     {
         super( replyQueue, socket );
     }

@@ -8,9 +8,9 @@ package ca.szc.keratin.core.event.message.recieve;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import ca.szc.keratin.core.event.message.MessageReceive;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveMode
@@ -26,7 +26,7 @@ public class ReceiveMode
 
     private final String target;
 
-    public ReceiveMode( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveMode( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
@@ -36,13 +36,20 @@ public class ReceiveMode
         target = params[0];
         flags = params[1];
 
-        flagParams =
-            params.length > 2 ? Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) )
-                            : Arrays.asList( params );
-
-        String firstFlagParam = flagParams.get( 0 );
-        if ( firstFlagParam.startsWith( ":" ) )
-            flagParams.set( 0, firstFlagParam.substring( 1 ) );
+        // Channel mode or user mode?
+        if ( params.length > 2 )
+        {
+            // Channel mode
+            flagParams = Arrays.asList( Arrays.copyOfRange( params, 2, params.length ) );
+            String firstFlagParam = flagParams.get( 0 );
+            if ( firstFlagParam.startsWith( ":" ) )
+                flagParams.set( 0, firstFlagParam.substring( 1 ) );
+        }
+        else
+        {
+            // User mode
+            flagParams = null;
+        }
     }
 
     // public String getSender()

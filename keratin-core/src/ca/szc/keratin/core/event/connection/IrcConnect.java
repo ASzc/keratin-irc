@@ -7,10 +7,9 @@
 package ca.szc.keratin.core.event.connection;
 
 import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
 
 import ca.szc.keratin.core.event.IrcConnectionEvent;
-import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.io.OutputQueue;
 
 /**
  * Socket has connected
@@ -19,7 +18,7 @@ public class IrcConnect
     extends IrcConnectionEvent
 {
 
-    public IrcConnect( BlockingQueue<IrcMessage> replyQueue, Socket socket )
+    public IrcConnect( OutputQueue replyQueue, Socket socket )
     {
         super( replyQueue, socket );
     }

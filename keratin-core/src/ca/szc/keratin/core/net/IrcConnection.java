@@ -9,7 +9,6 @@ package ca.szc.keratin.core.net;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.concurrent.BlockingQueue;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -24,8 +23,8 @@ import ca.szc.keratin.core.net.handlers.BusErrorHandler;
 import ca.szc.keratin.core.net.handlers.DeadMessageHandler;
 import ca.szc.keratin.core.net.handlers.ServerPingHandler;
 import ca.szc.keratin.core.net.io.ConnectionThread;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.mbassador.TimeoutSubscriptionFactory;
-import ca.szc.keratin.core.net.message.IrcMessage;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 import ca.szc.keratin.core.net.util.TrustAllTrustManager;
 
@@ -37,7 +36,7 @@ public class IrcConnection
 
     private MBassador<IrcEvent> bus;
 
-    private BlockingQueue<IrcMessage> outputQueue;
+    private OutputQueue outputQueue;
 
     private ConnectionThread connectionThread;
 
@@ -153,7 +152,7 @@ public class IrcConnection
     /**
      * Get the output Queue. May be called after calling {@link #connect()}.
      */
-    public BlockingQueue<IrcMessage> getOutputQueue()
+    public OutputQueue getOutputQueue()
     {
         return outputQueue;
     }

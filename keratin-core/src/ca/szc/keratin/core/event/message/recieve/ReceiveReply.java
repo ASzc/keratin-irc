@@ -6,9 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import ca.szc.keratin.core.event.message.MessageReceive;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveReply
@@ -16,7 +15,7 @@ public class ReceiveReply
 {
     // Reply is a special case, encompassing all messages with numeric command parts
 
-    public ReceiveReply( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveReply( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
     }

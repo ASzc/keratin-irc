@@ -8,17 +8,16 @@ package ca.szc.keratin.bot.handlers;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.connection.IrcConnect;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.message.SendMessage;
 
 public class ConnectionPreamble
 {
@@ -41,20 +40,21 @@ public class ConnectionPreamble
     @Handler( priority = Integer.MIN_VALUE + 1 )
     private void initialConnectionHandler( IrcConnect event )
     {
-        BlockingQueue<IrcMessage> replyQueue = event.getReplyQueue();
+        OutputQueue replyQueue = event.getReplyQueue();
 
         Logger.trace( "Sending connection nick/user preamble" );
         try
         {
             List<IrcMessage> messageList = new LinkedList<IrcMessage>();
 
-            messageList.add( new IrcMessage( null, "NICK", nick ) );
-            messageList.add( new IrcMessage( null, "USER", user, "0", "*", realName ) );
+            // TODO use SendMessage's static methods
+            messageList.add( SendMessage.nick( nick ) );
+            messageList.add( SendMessage.user( user, "0", realName ) );
 
             for ( IrcMessage message : messageList )
                 replyQueue.offer( message );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Couldn't enqueue nick/user info preamble." );
         }

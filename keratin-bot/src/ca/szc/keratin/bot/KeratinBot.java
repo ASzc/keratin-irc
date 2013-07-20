@@ -16,7 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import net.engio.mbassy.bus.MBassador;
@@ -31,10 +30,10 @@ import ca.szc.keratin.bot.handlers.ManageChannels;
 import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.message.SendMessage;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 
 /**
@@ -58,7 +57,7 @@ public class KeratinBot
 
     private boolean connectionActive;
 
-    private BlockingQueue<IrcMessage> outputQueue;
+    private OutputQueue outputQueue;
 
     private IrcConnection connection;
 
@@ -247,14 +246,14 @@ public class KeratinBot
         {
             try
             {
-                outputQueue.offer( new IrcMessage( null, "NICK", nick ) );
+                outputQueue.nick( nick );
+                this.nick = nick;
             }
-            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+            catch ( InvalidMessageParamException e )
             {
                 Logger.error( e, "Error creating IRC message" );
             }
         }
-        this.nick = nick;
     }
 
     /**
@@ -392,11 +391,11 @@ public class KeratinBot
             try
             {
                 if ( channel.getKey() == null )
-                    outputQueue.offer( new IrcMessage( null, "JOIN", channel.getName() ) );
+                    outputQueue.join( channel.getName() );
                 else
-                    outputQueue.offer( new IrcMessage( null, "JOIN", channel.getName(), channel.getKey() ) );
+                    outputQueue.join( channel.getName(), channel.getKey() );
             }
-            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+            catch ( InvalidMessageParamException e )
             {
                 Logger.error( e, "Error creating IRC message" );
             }
@@ -430,9 +429,9 @@ public class KeratinBot
         {
             try
             {
-                outputQueue.offer( new IrcMessage( null, "PART", name ) );
+                outputQueue.part( name );
             }
-            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+            catch ( InvalidMessageParamException e )
             {
                 Logger.error( e, "Error creating IRC message" );
             }
@@ -450,9 +449,9 @@ public class KeratinBot
     {
         try
         {
-            outputQueue.offer( new IrcMessage( null, "MODE", channelName, "+o", nick ) );
+            outputQueue.mode( channelName, "+o", nick );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating IRC message" );
         }
@@ -485,19 +484,15 @@ public class KeratinBot
                 i++;
             }
 
-            // Hijack nickBuffer so all the parameters can be given together in one array, satifying varargs
-            nickBuffer.add( 0, modeBuffer.toString() );
-            nickBuffer.add( 0, channelName );
-
-            String[] paramArray = new String[nickBuffer.size()];
-            nickBuffer.toArray( paramArray );
-            if ( paramArray.length > 0 )
+            if ( nickBuffer.size() > 0 )
             {
+                String[] nickArray = new String[nickBuffer.size()];
+                nickBuffer.toArray( nickArray );
                 try
                 {
-                    outputQueue.offer( new IrcMessage( null, "MODE", paramArray ) );
+                    outputQueue.mode( channelName, modeBuffer.toString(), nickArray );
                 }
-                catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+                catch ( InvalidMessageParamException e )
                 {
                     Logger.error( e, "Error creating IRC message" );
                 }
@@ -506,7 +501,7 @@ public class KeratinBot
     }
 
     /**
-     * Use a seperate connection to send a PRIVMSG as a different nick to a certain channel.
+     * Use a separate connection to send a PRIVMSG as a different nick to a certain channel.
      * 
      * @param nick The nick to use
      * @param channel The name of the channel. The bot must be in that channel.
@@ -518,7 +513,7 @@ public class KeratinBot
     }
 
     /**
-     * Use a seperate connection to send a PRIVMSG as a different nick to a certain channel.
+     * Use a separate connection to send a PRIVMSG as a different nick to a certain channel.
      * 
      * @param nick The nick to use
      * @param channel The channel to use
@@ -533,29 +528,35 @@ public class KeratinBot
                 @Override
                 public void run( IrcConnection conn )
                 {
-                    BlockingQueue<IrcMessage> outputQueue = conn.getOutputQueue();
+                    Logger.trace( "sendPrivmsgAs runnable running" );
+
+                    OutputQueue outputQueue = conn.getOutputQueue();
 
                     try
                     {
                         // Send as one block or not at all (an Exception will stop offer from being called)
                         List<IrcMessage> messageList = new LinkedList<IrcMessage>();
 
-                        messageList.add( new IrcMessage( null, "NICK", nick ) );
-                        messageList.add( new IrcMessage( null, "JOIN", channel.getName() ) );
-                        messageList.add( new IrcMessage( null, "PRIVMSG", channel.getName(), text ) );
-                        messageList.add( new IrcMessage( null, "PART", channel.getName() ) );
+                        messageList.add( SendMessage.nick( nick ) );
+
+                        String channelName = channel.getName();
+                        if ( channel.getKey() == null )
+                            messageList.add( SendMessage.join( channelName ) );
+                        else
+                            messageList.add( SendMessage.join( channelName, channel.getKey() ) );
+
+                        messageList.add( SendMessage.privmsg( channelName, text ) );
+                        messageList.add( SendMessage.part( channelName ) );
 
                         for ( IrcMessage message : messageList )
                             outputQueue.offer( message );
                     }
-                    catch ( InvalidMessagePrefixException | InvalidMessageCommandException
-                                    | InvalidMessageParamException e )
+                    catch ( InvalidMessageParamException e )
                     {
                         Logger.error( e, "Error creating IRC messages" );
                     }
-
                 }
-            }, 10, TimeUnit.SECONDS );
+            }, 5, TimeUnit.SECONDS );
         }
         catch ( InterruptedException e )
         {

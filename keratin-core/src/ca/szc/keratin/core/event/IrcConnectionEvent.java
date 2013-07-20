@@ -7,9 +7,8 @@
 package ca.szc.keratin.core.event;
 
 import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
 
-import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.io.OutputQueue;
 
 /**
  * An event about a change in the IRC socket connection
@@ -20,7 +19,7 @@ public abstract class IrcConnectionEvent
 
     private final Socket socket;
 
-    public IrcConnectionEvent( BlockingQueue<IrcMessage> replyQueue, Socket socket )
+    public IrcConnectionEvent( OutputQueue replyQueue, Socket socket )
     {
         super( replyQueue );
         this.socket = socket;

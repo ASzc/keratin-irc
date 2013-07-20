@@ -6,17 +6,14 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveJoin
@@ -29,7 +26,7 @@ public class ReceiveJoin
 
     private final String joiner;
 
-    public ReceiveJoin( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveJoin( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
@@ -52,9 +49,9 @@ public class ReceiveJoin
     {
         try
         {
-            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", channel, reply ) );
+            getReplyQueue().privmsg( channel, reply );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }
@@ -71,9 +68,9 @@ public class ReceiveJoin
     {
         try
         {
-            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", joiner, reply ) );
+            getReplyQueue().privmsg( joiner, reply );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }

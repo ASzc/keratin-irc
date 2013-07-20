@@ -6,9 +6,7 @@
  */
 package ca.szc.keratin.core.event;
 
-import java.util.concurrent.BlockingQueue;
-
-import ca.szc.keratin.core.net.message.IrcMessage;
+import ca.szc.keratin.core.net.io.OutputQueue;
 
 /**
  * An event tied to some part of IRC
@@ -16,19 +14,19 @@ import ca.szc.keratin.core.net.message.IrcMessage;
 public abstract class IrcEvent
 {
 
-    private final BlockingQueue<IrcMessage> replyQueue;
+    private final OutputQueue replyQueue;
 
     /**
      * Reference to the queue supplied at instantiation to handle reply messages.
      * 
      * @return The supplied queue for reply messages.
      */
-    public BlockingQueue<IrcMessage> getReplyQueue()
+    public OutputQueue getReplyQueue()
     {
         return replyQueue;
     }
 
-    public IrcEvent( BlockingQueue<IrcMessage> replyQueue )
+    public IrcEvent( OutputQueue replyQueue )
     {
         this.replyQueue = replyQueue;
     }

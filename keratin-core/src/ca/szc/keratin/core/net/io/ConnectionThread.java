@@ -86,6 +86,8 @@ public class ConnectionThread
 
     private final InetSocketAddress endpoint;
 
+    private final OutputQueue wrappedOutputQueue;
+
     private final BlockingQueue<IrcMessage> outputQueue;
 
     private BufferedWriter outputWriter;
@@ -101,6 +103,7 @@ public class ConnectionThread
         this.socketFactory = socketFactory;
 
         outputQueue = new LinkedBlockingQueue<IrcMessage>();
+        wrappedOutputQueue = new OutputQueue( outputQueue );
     }
 
     private void createOutput( Socket socket )
@@ -120,9 +123,9 @@ public class ConnectionThread
     /**
      * Get the output queue for the socket. May be called immediately.
      */
-    public BlockingQueue<IrcMessage> getOutputQueue()
+    public OutputQueue getOutputQueue()
     {
-        return outputQueue;
+        return wrappedOutputQueue;
     }
 
     @Override
@@ -215,7 +218,7 @@ public class ConnectionThread
                     input = new BufferedReader( new InputStreamReader( inputStream, IoConfig.CHARSET ) );
                     Logger.trace( "Input created" );
 
-                    bus.publishAsync( new IrcConnect( outputQueue, socket ) );
+                    bus.publishAsync( new IrcConnect( wrappedOutputQueue, socket ) );
 
                     state = RunState.READ;
                 }
@@ -254,60 +257,60 @@ public class ConnectionThread
                             {
                                 // INVITE
                                 if ( ReceiveInvite.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveInvite( outputQueue, message );
+                                    messageEvent = new ReceiveInvite( wrappedOutputQueue, message );
 
                                 // JOIN
                                 else if ( ReceiveJoin.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveJoin( outputQueue, message );
+                                    messageEvent = new ReceiveJoin( wrappedOutputQueue, message );
 
                                 // KICK
                                 else if ( ReceiveKick.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveKick( outputQueue, message );
+                                    messageEvent = new ReceiveKick( wrappedOutputQueue, message );
 
                                 // MODE
                                 else if ( ReceiveMode.COMMAND.equals( command ) )
                                 {
                                     if ( message.getParams().length == 2 )
-                                        messageEvent = new ReceiveUserMode( outputQueue, message );
+                                        messageEvent = new ReceiveUserMode( wrappedOutputQueue, message );
                                     else
-                                        messageEvent = new ReceiveChannelMode( outputQueue, message );
+                                        messageEvent = new ReceiveChannelMode( wrappedOutputQueue, message );
                                 }
 
                                 // NICK
                                 else if ( ReceiveNick.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveNick( outputQueue, message );
+                                    messageEvent = new ReceiveNick( wrappedOutputQueue, message );
 
                                 // NOTICE
                                 else if ( ReceiveNotice.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveNotice( outputQueue, message );
+                                    messageEvent = new ReceiveNotice( wrappedOutputQueue, message );
 
                                 // PART
                                 else if ( ReceivePart.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePart( outputQueue, message );
+                                    messageEvent = new ReceivePart( wrappedOutputQueue, message );
 
                                 // PING
                                 else if ( ReceivePing.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePing( outputQueue, message );
+                                    messageEvent = new ReceivePing( wrappedOutputQueue, message );
 
                                 // PONG
                                 else if ( ReceivePong.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePong( outputQueue, message );
+                                    messageEvent = new ReceivePong( wrappedOutputQueue, message );
 
                                 // PRIVMSG
                                 else if ( ReceivePrivmsg.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePrivmsg( outputQueue, message );
+                                    messageEvent = new ReceivePrivmsg( wrappedOutputQueue, message );
 
                                 // QUIT
                                 else if ( ReceiveQuit.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveQuit( outputQueue, message );
+                                    messageEvent = new ReceiveQuit( wrappedOutputQueue, message );
 
                                 // replies
                                 else if ( isDigits( command ) )
-                                    messageEvent = new ReceiveReply( outputQueue, message );
+                                    messageEvent = new ReceiveReply( wrappedOutputQueue, message );
 
                                 // TOPIC
                                 else if ( ReceiveTopic.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveTopic( outputQueue, message );
+                                    messageEvent = new ReceiveTopic( wrappedOutputQueue, message );
 
                                 // others
                                 else
@@ -378,7 +381,7 @@ public class ConnectionThread
                     }
                 }
 
-                bus.publishAsync( new IrcDisconnect( outputQueue, socket ) );
+                bus.publishAsync( new IrcDisconnect( wrappedOutputQueue, socket ) );
 
                 Logger.info( "Disconnected, attempting reconnect." );
 

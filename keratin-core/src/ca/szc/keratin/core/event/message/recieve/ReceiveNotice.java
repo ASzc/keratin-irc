@@ -6,17 +6,14 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveNotice
@@ -31,7 +28,7 @@ public class ReceiveNotice
 
     private final String text;
 
-    public ReceiveNotice( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveNotice( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
@@ -74,9 +71,9 @@ public class ReceiveNotice
     {
         try
         {
-            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", channel, reply ) );
+            getReplyQueue().notice( channel, reply );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }
@@ -93,9 +90,9 @@ public class ReceiveNotice
     {
         try
         {
-            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", sender, reply ) );
+            getReplyQueue().notice( sender, reply );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }

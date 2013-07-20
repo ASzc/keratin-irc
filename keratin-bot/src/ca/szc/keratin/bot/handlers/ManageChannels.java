@@ -8,7 +8,6 @@ package ca.szc.keratin.bot.handlers;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
 
 import net.engio.mbassy.listener.Handler;
 
@@ -18,10 +17,8 @@ import ca.szc.keratin.bot.Channel;
 import ca.szc.keratin.bot.KeratinBot;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
-import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
  * Manages channel join status
@@ -47,16 +44,16 @@ public class ManageChannels
         Logger.trace( "Sending initial channel join messages" );
         for ( Entry<String, Channel> channelEntry : channels.entrySet() )
         {
-            BlockingQueue<IrcMessage> replyQueue = event.getReplyQueue();
+            OutputQueue replyQueue = event.getReplyQueue();
             Channel channel = channelEntry.getValue();
             try
             {
                 if ( channel.getKey() == null )
-                    replyQueue.offer( new IrcMessage( null, "JOIN", channel.getName() ) );
+                    replyQueue.join( channel.getName() );
                 else
-                    replyQueue.offer( new IrcMessage( null, "JOIN", channel.getName(), channel.getKey() ) );
+                    replyQueue.join( channel.getName(), channel.getKey() );
             }
-            catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+            catch ( InvalidMessageParamException e )
             {
                 Logger.error( e, "Error creating IRC message" );
             }

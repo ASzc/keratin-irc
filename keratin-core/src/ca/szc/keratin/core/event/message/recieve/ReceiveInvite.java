@@ -6,9 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import ca.szc.keratin.core.event.message.MessageReceive;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveInvite
@@ -22,7 +21,7 @@ public class ReceiveInvite
 
     private final String sender;
 
-    public ReceiveInvite( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveInvite( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 

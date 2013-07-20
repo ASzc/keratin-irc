@@ -6,8 +6,7 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveChannelMode
@@ -15,7 +14,7 @@ public class ReceiveChannelMode
 {
     public static final String COMMAND = "MODE";
 
-    public ReceiveChannelMode( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceiveChannelMode( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
     }

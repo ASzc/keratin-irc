@@ -6,14 +6,11 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import java.util.concurrent.BlockingQueue;
-
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.message.MessageReceive;
-import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
-import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceivePing
@@ -23,7 +20,7 @@ public class ReceivePing
 
     private final String[] params;
 
-    public ReceivePing( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public ReceivePing( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
@@ -39,9 +36,14 @@ public class ReceivePing
     {
         try
         {
-            getReplyQueue().offer( new IrcMessage( null, "PING", params ) );
+            if ( params.length == 1 )
+                getReplyQueue().pong( params[0] );
+            else if ( params.length == 2 )
+                getReplyQueue().pong( params[0], params[1] );
+            else
+                Logger.error( "Can't PONG, invalid number of PING message parameters" );
         }
-        catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
+        catch ( InvalidMessageParamException e )
         {
             Logger.error( e, "Error creating reply message" );
         }

@@ -6,9 +6,8 @@
  */
 package ca.szc.keratin.core.event.message;
 
-import java.util.concurrent.BlockingQueue;
-
 import ca.szc.keratin.core.event.IrcMessageEvent;
+import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
@@ -18,7 +17,7 @@ public abstract class MessageReceive
     extends IrcMessageEvent
 {
 
-    public MessageReceive( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
+    public MessageReceive( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
     }
