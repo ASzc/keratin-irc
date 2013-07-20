@@ -19,12 +19,15 @@ public class ReceivePart
 
     private final String parter;
 
+    private final String reason;
+
     public ReceivePart( OutputQueue replyQueue, IrcMessage message )
     {
         super( replyQueue, message );
 
         parter = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
-        channel = message.getParams()[0].substring( 1 );
+        channel = message.getParams()[0];
+        reason = message.getParams()[1].substring( 1 );
     }
 
     public String getChannel()
@@ -37,4 +40,8 @@ public class ReceivePart
         return parter;
     }
 
+    public String getReason()
+    {
+        return reason;
+    }
 }

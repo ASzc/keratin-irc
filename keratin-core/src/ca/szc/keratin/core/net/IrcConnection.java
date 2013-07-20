@@ -128,7 +128,7 @@ public class IrcConnection
         // Bus has to be made in this class's constructor because we want to be able to subscribe stuff to the bus
         // before connecting.
         BusConfiguration busConf = BusConfiguration.Default();
-        busConf.setSubscriptionFactory( new TimeoutSubscriptionFactory() );
+        // busConf.setSubscriptionFactory( new TimeoutSubscriptionFactory() );
         bus = new MBassador<IrcEvent>( busConf );
 
         if ( SslMode.ON.equals( ssl ) )

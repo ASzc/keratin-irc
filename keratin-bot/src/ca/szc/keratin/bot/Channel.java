@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.engio.mbassy.listener.Handler;
+
+import org.pmw.tinylog.Logger;
+
 import ca.szc.keratin.bot.User.PrivLevel;
 import ca.szc.keratin.core.event.message.recieve.ReceiveChannelMode;
 import ca.szc.keratin.core.event.message.recieve.ReceiveJoin;
@@ -172,6 +175,31 @@ public class Channel
         }
     }
 
+    private void setNickAs( String nick, PrivLevel privLevel )
+    {
+        synchronized ( nicksMutex )
+        {
+            if ( nicks.containsKey( nick ) )
+            {
+                User user = nicks.get( nick );
+                if ( user.getPrivLevel().equals( privLevel ) )
+                {
+                    Logger.trace( getName() + " Nick already " + privLevel + ", doing nothing: " + nick );
+                }
+                else
+                {
+                    Logger.trace( getName() + " Changing nick privLevel to " + privLevel + ": " + nick );
+                    user.setPrivLevel( privLevel );
+                }
+            }
+            else
+            {
+                Logger.trace( getName() + " New user, adding as " + privLevel + ": " + nick );
+                nicks.put( nick, new User( nick, privLevel ) );
+            }
+        }
+    }
+
     @Handler
     private void namesListing( ReceiveReply event )
     {
@@ -192,16 +220,18 @@ public class Channel
 
                 synchronized ( nicksMutex )
                 {
+                    Logger.trace( "Processing names reply for channel: " + getName() );
                     for ( String nick : nicksArray )
                     {
+                        // Treating the NAMES listing as authoritative, may override existing values
                         if ( nick.startsWith( OP_PREFIX ) )
                         {
                             nick = nick.substring( 1 );
-                            nicks.put( nick, new User( nick, PrivLevel.Op ) );
+                            setNickAs( nick, PrivLevel.Op );
                         }
                         else
                         {
-                            nicks.put( nick, new User( nick ) );
+                            setNickAs( nick, PrivLevel.Regular );
                         }
                     }
                 }
@@ -219,7 +249,12 @@ public class Channel
         {
             synchronized ( nicksMutex )
             {
-                nicks.put( nick, new User( nick ) );
+                Logger.trace( "Processing join in channel: " + getName() );
+                // Treating JOINs as non-authoritative, may not override existing values
+                if ( !nicks.containsKey( nick ) )
+                {
+                    setNickAs( nick, PrivLevel.Regular );
+                }
             }
         }
     }
@@ -234,10 +269,17 @@ public class Channel
         {
             synchronized ( nicksMutex )
             {
-                nicks.remove( nick );
+                Logger.trace( "Processing part in channel: " + getName() );
+                Logger.trace( "Removing nick: " + nick );
+                if ( nicks.remove( nick ) == null )
+                {
+                    Logger.trace( "Nick to be removed was not in the nicks collection: " + nick );
+                }
             }
         }
     }
+
+    // TODO handle nick changes (transfer user data to new nick)
 
     @Handler
     private void updateOnMode( ReceiveChannelMode event )
@@ -256,6 +298,7 @@ public class Channel
 
                 synchronized ( nicksMutex )
                 {
+                    Logger.trace( "Processing mode update in channel: " + getName() );
                     for ( String nick : affectedNicks )
                     {
                         if ( nick.startsWith( ":" ) )
@@ -263,11 +306,14 @@ public class Channel
 
                         if ( nicks.containsKey( nick ) )
                         {
-                            User user = nicks.get( nick );
                             if ( op )
-                                user.setPrivLevel( PrivLevel.Op );
+                            {
+                                setNickAs( nick, PrivLevel.Op );
+                            }
                             else if ( deop )
-                                user.setPrivLevel( PrivLevel.Regular );
+                            {
+                                setNickAs( nick, PrivLevel.Regular );
+                            }
                         }
                     }
                 }
