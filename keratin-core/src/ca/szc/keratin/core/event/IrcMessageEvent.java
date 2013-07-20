@@ -6,7 +6,8 @@
  */
 package ca.szc.keratin.core.event;
 
-import net.engio.mbassy.bus.MBassador;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
@@ -18,9 +19,9 @@ public abstract class IrcMessageEvent
 
     private final IrcMessage message;
 
-    public IrcMessageEvent( MBassador<IrcEvent> bus, IrcMessage message )
+    public IrcMessageEvent( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus );
+        super( replyQueue );
         this.message = message;
     }
 

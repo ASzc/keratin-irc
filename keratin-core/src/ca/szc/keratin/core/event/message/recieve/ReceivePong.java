@@ -6,21 +6,21 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import java.util.concurrent.BlockingQueue;
+
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceivePong
-    extends MessageRecieve
+    extends MessageReceive
 {
     public static final String COMMAND = "PONG";
 
     private final String[] params;
 
-    public ReceivePong( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceivePong( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         params = message.getParams();
     }

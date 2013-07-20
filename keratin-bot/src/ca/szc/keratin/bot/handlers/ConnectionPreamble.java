@@ -6,18 +6,19 @@
  */
 package ca.szc.keratin.bot.handlers;
 
-import net.engio.mbassy.bus.MBassador;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
-import ca.szc.keratin.core.event.message.send.SendNick;
-import ca.szc.keratin.core.event.message.send.SendUser;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
+import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ConnectionPreamble
 {
@@ -40,17 +41,22 @@ public class ConnectionPreamble
     @Handler( priority = Integer.MIN_VALUE + 1 )
     private void initialConnectionHandler( IrcConnect event )
     {
-        MBassador<IrcEvent> bus = event.getBus();
+        BlockingQueue<IrcMessage> replyQueue = event.getReplyQueue();
 
         Logger.trace( "Sending connection nick/user preamble" );
         try
         {
-            bus.publish( new SendNick( bus, nick ) );
-            bus.publish( new SendUser( bus, user, "0", realName ) );
+            List<IrcMessage> messageList = new LinkedList<IrcMessage>();
+
+            messageList.add( new IrcMessage( null, "NICK", nick ) );
+            messageList.add( new IrcMessage( null, "USER", user, "0", "*", realName ) );
+
+            for ( IrcMessage message : messageList )
+                replyQueue.offer( message );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Couldn't send user info preamble." );
+            Logger.error( e, "Couldn't enqueue user info preamble." );
         }
     }
 }

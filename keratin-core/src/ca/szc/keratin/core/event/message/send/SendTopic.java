@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.send;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -18,11 +18,11 @@ public class SendTopic
     extends MessageSend
 {
     public static final String COMMAND = "TOPIC";
-    
-    public SendTopic( MBassador<IrcEvent> bus, String channel, String topic )
+
+    public SendTopic( BlockingQueue<IrcMessage> replyQueue, String channel, String topic )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, channel, topic ));
+        super( replyQueue, new IrcMessage( null, COMMAND, channel, topic ) );
     }
 }

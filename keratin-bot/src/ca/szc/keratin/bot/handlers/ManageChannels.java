@@ -8,21 +8,20 @@ package ca.szc.keratin.bot.handlers;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
 
-import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.Channel;
 import ca.szc.keratin.bot.KeratinBot;
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.message.recieve.ReceiveKick;
-import ca.szc.keratin.core.event.message.send.SendJoin;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
+import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
  * Manages channel join status
@@ -45,22 +44,21 @@ public class ManageChannels
     @Handler( priority = Integer.MIN_VALUE + 2 )
     private void initialConnectionHandler( IrcConnect event )
     {
-        MBassador<IrcEvent> bus = event.getBus();
-
         Logger.trace( "Sending initial channel join messages" );
         for ( Entry<String, Channel> channelEntry : channels.entrySet() )
         {
+            BlockingQueue<IrcMessage> replyQueue = event.getReplyQueue();
             Channel channel = channelEntry.getValue();
             try
             {
                 if ( channel.getKey() == null )
-                    bus.publishAsync( new SendJoin( bus, channel.getName() ) );
+                    replyQueue.offer( new IrcMessage( null, "JOIN", channel.getName() ) );
                 else
-                    bus.publishAsync( new SendJoin( bus, channel.getName(), channel.getKey() ) );
+                    replyQueue.offer( new IrcMessage( null, "JOIN", channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
-                Logger.error( e, "Could not send join message for channel '{0}'", channel );
+                Logger.error( e, "Error creating IRC message" );
             }
         }
     }

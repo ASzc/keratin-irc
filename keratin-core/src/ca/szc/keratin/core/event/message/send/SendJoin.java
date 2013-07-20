@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.send;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -19,17 +19,17 @@ public class SendJoin
 {
     public static final String COMMAND = "JOIN";
 
-    public SendJoin( MBassador<IrcEvent> bus, String name )
+    public SendJoin( BlockingQueue<IrcMessage> replyQueue, String name )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, name ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, name ) );
     }
 
-    public SendJoin( MBassador<IrcEvent> bus, String name, String key )
+    public SendJoin( BlockingQueue<IrcMessage> replyQueue, String name, String key )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, name, key ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, name, key ) );
     }
 }

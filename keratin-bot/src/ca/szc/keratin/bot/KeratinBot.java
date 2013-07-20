@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import net.engio.mbassy.bus.MBassador;
@@ -28,16 +29,12 @@ import ca.szc.keratin.bot.annotation.HandlerContainerDetector;
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
 import ca.szc.keratin.bot.handlers.ManageChannels;
 import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.send.SendJoin;
-import ca.szc.keratin.core.event.message.send.SendMode;
-import ca.szc.keratin.core.event.message.send.SendNick;
-import ca.szc.keratin.core.event.message.send.SendPart;
-import ca.szc.keratin.core.event.message.send.SendPrivmsg;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
+import ca.szc.keratin.core.net.message.IrcMessage;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 
 /**
@@ -61,11 +58,13 @@ public class KeratinBot
 
     private boolean connectionActive;
 
-    private MBassador<IrcEvent> connectionBus;
+    private BlockingQueue<IrcMessage> outputQueue;
 
     private IrcConnection connection;
 
     private DelegateConnection delegateConn;
+
+    private MBassador<IrcEvent> connectionBus;
 
     /**
      * Make a KeratinBot with no fields predefined. Must have fields set before calling connect().
@@ -157,11 +156,12 @@ public class KeratinBot
             connectionBus.subscribe( channel );
         }
 
-        conn.connect();
-
         delegateConn = new DelegateConnection( serverAddress, serverPort, sslMode, user, nick + "-del", realName );
 
         connection = conn;
+        outputQueue = conn.getOutputQueue();
+
+        conn.connect();
         connectionActive = true;
     }
 
@@ -173,7 +173,7 @@ public class KeratinBot
         connectionActive = false;
         connection.disconnect();
         connection = null;
-        connectionBus = null;
+        outputQueue = null;
     }
 
     /**
@@ -247,11 +247,11 @@ public class KeratinBot
         {
             try
             {
-                connectionBus.publishAsync( new SendNick( connectionBus, nick ) );
+                outputQueue.offer( new IrcMessage( null, "NICK", nick ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
-                Logger.error( e, "Could not send nick message for nick '{0}'", nick );
+                Logger.error( e, "Error creating IRC message" );
             }
         }
         this.nick = nick;
@@ -392,13 +392,13 @@ public class KeratinBot
             try
             {
                 if ( channel.getKey() == null )
-                    connectionBus.publishAsync( new SendJoin( connectionBus, channel.getName() ) );
+                    outputQueue.offer( new IrcMessage( null, "JOIN", channel.getName() ) );
                 else
-                    connectionBus.publishAsync( new SendJoin( connectionBus, channel.getName(), channel.getKey() ) );
+                    outputQueue.offer( new IrcMessage( null, "JOIN", channel.getName(), channel.getKey() ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
-                Logger.error( e, "Could not send join message for channel '{0}'", channel );
+                Logger.error( e, "Error creating IRC message" );
             }
 
             connectionBus.subscribe( channel );
@@ -430,11 +430,11 @@ public class KeratinBot
         {
             try
             {
-                connectionBus.publishAsync( new SendPart( connectionBus, name ) );
+                outputQueue.offer( new IrcMessage( null, "PART", name ) );
             }
             catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
             {
-                Logger.error( e, "Could not send part message for channel '{0}'", name );
+                Logger.error( e, "Error creating IRC message" );
             }
         }
         channels.remove( name );
@@ -450,11 +450,11 @@ public class KeratinBot
     {
         try
         {
-            connectionBus.publishAsync( new SendMode( connectionBus, channelName, "+o", nick ) );
+            outputQueue.offer( new IrcMessage( null, "MODE", channelName, "+o", nick ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Couldn't send op mode change for nick '{0}' in channel '{1}'", nick, channelName );
+            Logger.error( e, "Error creating IRC message" );
         }
     }
 
@@ -495,12 +495,11 @@ public class KeratinBot
             {
                 try
                 {
-                    connectionBus.publishAsync( new SendMode( connectionBus, paramArray ) );
+                    outputQueue.offer( new IrcMessage( null, "MODE", paramArray ) );
                 }
                 catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
                 {
-                    Logger.error( e, "Couldn't send op mode change for nicks '{0}' in channel '{1}'", nickBuffer,
-                                  channelName );
+                    Logger.error( e, "Error creating IRC message" );
                 }
             }
         }
@@ -534,29 +533,27 @@ public class KeratinBot
                 @Override
                 public void run( IrcConnection conn )
                 {
-                    MBassador<IrcEvent> bus = conn.getEventBus();
+                    BlockingQueue<IrcMessage> outputQueue = conn.getOutputQueue();
 
                     try
                     {
-                        bus.publish( new SendNick( bus, nick ) );
-                        bus.publish( new SendJoin( bus, channel.getName() ) );
-                        try
-                        {
-                            // Despite the messages being sent in order on our end, sometimes the server doesn't catch
-                            // up to the channel join in time. Wait a short arbitrary period to make this less likely.
-                            Thread.sleep( 50 );
-                        }
-                        catch ( InterruptedException e )
-                        {
-                        }
-                        bus.publishAsync( new SendPrivmsg( bus, channel.getName(), text ) );
-                        bus.publishAsync( new SendPart( bus, channel.getName() ) );
+                        // Send as one block or not at all (an Exception will stop offer from being called)
+                        List<IrcMessage> messageList = new LinkedList<IrcMessage>();
+
+                        messageList.add( new IrcMessage( null, "NICK", nick ) );
+                        messageList.add( new IrcMessage( null, "JOIN", channel.getName() ) );
+                        messageList.add( new IrcMessage( null, "PRIVMSG", channel.getName(), text ) );
+                        messageList.add( new IrcMessage( null, "PART", channel.getName() ) );
+
+                        for ( IrcMessage message : messageList )
+                            outputQueue.offer( message );
                     }
                     catch ( InvalidMessagePrefixException | InvalidMessageCommandException
                                     | InvalidMessageParamException e )
                     {
-                        Logger.error( e, "Could not send an IRC message" );
+                        Logger.error( e, "Error creating IRC messages" );
                     }
+
                 }
             }, 10, TimeUnit.SECONDS );
         }

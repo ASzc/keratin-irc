@@ -8,28 +8,27 @@ package ca.szc.keratin.core.event.message.recieve;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveMode
-    extends MessageRecieve
+    extends MessageReceive
 {
     public static final String COMMAND = "MODE";
 
     // private final String sender;
 
-    private final String target;
+    private final List<String> flagParams;
 
     private final String flags;
 
-    private final List<String> flagParams;
+    private final String target;
 
-    public ReceiveMode( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceiveMode( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         String[] params = message.getParams();
 
@@ -46,20 +45,14 @@ public class ReceiveMode
             flagParams.set( 0, firstFlagParam.substring( 1 ) );
     }
 
-    // public ReceiveMode( MBassador<IrcEvent> bus, String prefix, String name, String mode )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, name, mode ));
-    // }
-
     // public String getSender()
     // {
     // return sender;
     // }
 
-    public String getTarget()
+    public List<String> getFlagParams()
     {
-        return target;
+        return flagParams;
     }
 
     public String getFlags()
@@ -67,8 +60,8 @@ public class ReceiveMode
         return flags;
     }
 
-    public List<String> getFlagParams()
+    public String getTarget()
     {
-        return flagParams;
+        return target;
     }
 }

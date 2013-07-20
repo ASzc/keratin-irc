@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.send;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -19,17 +19,17 @@ public class SendPong
 {
     public static final String COMMAND = "PONG";
 
-    public SendPong( MBassador<IrcEvent> bus, String[] params )
+    public SendPong( BlockingQueue<IrcMessage> replyQueue, String[] params )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, params ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, params ) );
     }
 
-    public SendPong( MBassador<IrcEvent> bus, String server1, String server2 )
+    public SendPong( BlockingQueue<IrcMessage> replyQueue, String server1, String server2 )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, server1, server2 ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, server1, server2 ) );
     }
 }

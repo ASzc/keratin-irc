@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.send;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -19,11 +19,11 @@ public class SendUser
 {
     public static final String COMMAND = "USER";
 
-    public SendUser( MBassador<IrcEvent> bus, String user, String mode, String realname )
+    public SendUser( BlockingQueue<IrcMessage> replyQueue, String user, String mode, String realname )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
         // * is used in the original "hostname" parameter that is now unused
-        super( bus, new IrcMessage( null, COMMAND, user, mode, "*", realname ));
+        super( replyQueue, new IrcMessage( null, COMMAND, user, mode, "*", realname ) );
     }
 }

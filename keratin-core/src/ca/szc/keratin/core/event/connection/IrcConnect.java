@@ -7,11 +7,10 @@
 package ca.szc.keratin.core.event.connection;
 
 import java.net.Socket;
-
-import net.engio.mbassy.bus.MBassador;
+import java.util.concurrent.BlockingQueue;
 
 import ca.szc.keratin.core.event.IrcConnectionEvent;
-import ca.szc.keratin.core.event.IrcEvent;
+import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
  * Socket has connected
@@ -20,9 +19,9 @@ public class IrcConnect
     extends IrcConnectionEvent
 {
 
-    public IrcConnect( MBassador<IrcEvent> bus, Socket socket )
+    public IrcConnect( BlockingQueue<IrcMessage> replyQueue, Socket socket )
     {
-        super( bus, socket );
+        super( replyQueue, socket );
     }
 
 }

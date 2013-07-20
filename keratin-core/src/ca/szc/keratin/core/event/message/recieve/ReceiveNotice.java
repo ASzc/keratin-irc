@@ -6,23 +6,21 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
+import java.util.concurrent.BlockingQueue;
+
 import org.pmw.tinylog.Logger;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
-import ca.szc.keratin.core.event.message.send.SendNotice;
-import ca.szc.keratin.core.misc.LineWrap;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveNotice
-    extends MessageRecieve
+    extends MessageReceive
     implements Replyable, DirectlyReplyable, PrivatelyReplyable
 {
     public static final String COMMAND = "NOTICE";
@@ -33,9 +31,9 @@ public class ReceiveNotice
 
     private final String text;
 
-    public ReceiveNotice( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceiveNotice( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         if ( message.getPrefix() != null )
         {
@@ -56,20 +54,14 @@ public class ReceiveNotice
         text = message.getParams()[1].substring( 1 );
     }
 
-    // public ReceiveNotice( MBassador<IrcEvent> bus, String prefix, String nick, String text )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, nick, text ) );
-    // }
+    public String getChannel()
+    {
+        return channel;
+    }
 
     public String getSender()
     {
         return sender;
-    }
-
-    public String getChannel()
-    {
-        return channel;
     }
 
     public String getText()
@@ -82,12 +74,11 @@ public class ReceiveNotice
     {
         try
         {
-            for ( String line : LineWrap.wrap( reply ) )
-                getBus().publishAsync( new SendNotice( getBus(), channel, line ) );
+            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", channel, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Error sending reply" );
+            Logger.error( e, "Error creating reply message" );
         }
     }
 
@@ -102,12 +93,11 @@ public class ReceiveNotice
     {
         try
         {
-            for ( String line : LineWrap.wrap( reply ) )
-                getBus().publishAsync( new SendNotice( getBus(), sender, line ) );
+            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", sender, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Error sending reply" );
+            Logger.error( e, "Error creating reply message" );
         }
     }
 }

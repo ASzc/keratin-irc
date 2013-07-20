@@ -6,7 +6,9 @@
  */
 package ca.szc.keratin.core.event;
 
-import net.engio.mbassy.bus.MBassador;
+import java.util.concurrent.BlockingQueue;
+
+import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
  * An event tied to some part of IRC
@@ -14,21 +16,21 @@ import net.engio.mbassy.bus.MBassador;
 public abstract class IrcEvent
 {
 
-    private final MBassador<IrcEvent> bus;
+    private final BlockingQueue<IrcMessage> replyQueue;
 
     /**
-     * Reference to the bus that carried this event, so that reply messages are easily possible.
+     * Reference to the queue supplied at instantiation to handle reply messages.
      * 
-     * @return The bus that carried this event
+     * @return The supplied queue for reply messages.
      */
-    public MBassador<IrcEvent> getBus()
+    public BlockingQueue<IrcMessage> getReplyQueue()
     {
-        return bus;
+        return replyQueue;
     }
 
-    public IrcEvent( MBassador<IrcEvent> bus )
+    public IrcEvent( BlockingQueue<IrcMessage> replyQueue )
     {
-        this.bus = bus;
+        this.replyQueue = replyQueue;
     }
 
 }

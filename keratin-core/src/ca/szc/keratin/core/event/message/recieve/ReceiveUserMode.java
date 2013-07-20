@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveUserMode
@@ -15,8 +15,8 @@ public class ReceiveUserMode
 {
     public static final String COMMAND = "MODE";
 
-    public ReceiveUserMode( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceiveUserMode( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
     }
 }

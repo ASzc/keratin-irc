@@ -6,13 +6,13 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import java.util.concurrent.BlockingQueue;
+
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveTopic
-    extends MessageRecieve
+    extends MessageReceive
 {
     public static final String COMMAND = "TOPIC";
 
@@ -22,20 +22,14 @@ public class ReceiveTopic
 
     private final String topic;
 
-    public ReceiveTopic( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceiveTopic( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
         channel = message.getParams()[0];
         topic = message.getParams()[1].substring( 1 );
     }
-
-    // public ReceiveTopic( MBassador<IrcEvent> bus, String prefix, String channel, String topic )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, channel, topic ) );
-    // }
 
     public String getChannel()
     {

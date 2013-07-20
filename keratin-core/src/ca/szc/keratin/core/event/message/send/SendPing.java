@@ -6,8 +6,8 @@
  */
 package ca.szc.keratin.core.event.message.send;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -19,23 +19,23 @@ public class SendPing
 {
     public static final String COMMAND = "PING";
 
-    public SendPing( MBassador<IrcEvent> bus, String[] params )
+    public SendPing( BlockingQueue<IrcMessage> replyQueue, String[] params )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, params ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, params ) );
     }
 
-    public SendPing( MBassador<IrcEvent> bus, String server1, String server2 )
+    public SendPing( BlockingQueue<IrcMessage> replyQueue, String server1, String server2 )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
         // TODO validation
-        super( bus, new IrcMessage( null, COMMAND, server1, server2 ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, server1, server2 ) );
     }
 
-    public SendPing( MBassador<IrcEvent> bus, String server1 )
+    public SendPing( BlockingQueue<IrcMessage> replyQueue, String server1 )
         throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
     {
-        super( bus, new IrcMessage( null, COMMAND, server1 ) );
+        super( replyQueue, new IrcMessage( null, COMMAND, server1 ) );
     }
 }

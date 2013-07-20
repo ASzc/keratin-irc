@@ -9,6 +9,7 @@ package ca.szc.keratin.core.net;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.BlockingQueue;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -24,6 +25,7 @@ import ca.szc.keratin.core.net.handlers.DeadMessageHandler;
 import ca.szc.keratin.core.net.handlers.ServerPingHandler;
 import ca.szc.keratin.core.net.io.ConnectionThread;
 import ca.szc.keratin.core.net.mbassador.TimeoutSubscriptionFactory;
+import ca.szc.keratin.core.net.message.IrcMessage;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 import ca.szc.keratin.core.net.util.TrustAllTrustManager;
 
@@ -35,7 +37,9 @@ public class IrcConnection
 
     private MBassador<IrcEvent> bus;
 
-    private Thread inputWorkerThread;
+    private BlockingQueue<IrcMessage> outputQueue;
+
+    private ConnectionThread connectionThread;
 
     /**
      * Defines the different use states of SSL. See the javadoc of the members for more information.
@@ -122,6 +126,8 @@ public class IrcConnection
             throw new InvalidPortException( e );
         }
 
+        // Bus has to be made in this class's constructor because we want to be able to subscribe stuff to the bus
+        // before connecting.
         BusConfiguration busConf = BusConfiguration.Default();
         busConf.setSubscriptionFactory( new TimeoutSubscriptionFactory() );
         bus = new MBassador<IrcEvent>( busConf );
@@ -135,7 +141,7 @@ public class IrcConnection
     }
 
     /**
-     * Get the IrcEvent bus for the connection
+     * Get the IrcEvent bus for the connection. May be called immediately.
      * 
      * @return the central MBassador bus
      */
@@ -145,7 +151,15 @@ public class IrcConnection
     }
 
     /**
-     * Activate the connection. Will block until the first connection is established.
+     * Get the output Queue. May be called after calling {@link #connect()}.
+     */
+    public BlockingQueue<IrcMessage> getOutputQueue()
+    {
+        return outputQueue;
+    }
+
+    /**
+     * Activate the connection. Will return immediately after starting the connection thread.
      */
     public void connect()
     {
@@ -157,8 +171,9 @@ public class IrcConnection
         bus.subscribe( new DeadMessageHandler() );
 
         Logger.trace( "Creating/starting connection thread" );
-        inputWorkerThread = new ConnectionThread( bus, endpoint, socketFactory );
-        inputWorkerThread.start();
+        connectionThread = new ConnectionThread( bus, endpoint, socketFactory );
+        outputQueue = connectionThread.getOutputQueue();
+        connectionThread.start();
 
         Logger.trace( "Done set up" );
     }
@@ -171,10 +186,10 @@ public class IrcConnection
         Logger.info( "Disconnecting" );
 
         Logger.trace( "Stopping worker thread" );
-        inputWorkerThread.interrupt();
+        connectionThread.interrupt();
         try
         {
-            inputWorkerThread.join();
+            connectionThread.join();
         }
         catch ( InterruptedException e )
         {
@@ -185,13 +200,5 @@ public class IrcConnection
         bus = null;
 
         Logger.trace( "Done shut down" );
-    }
-
-    /**
-     * Put the IrcConnection in a state to be reused after calling disconnect().
-     */
-    public void reuse()
-    {
-        bus = new MBassador<IrcEvent>( BusConfiguration.Default() );
     }
 }

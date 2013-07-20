@@ -6,13 +6,13 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import java.util.concurrent.BlockingQueue;
+
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceivePart
-    extends MessageRecieve
+    extends MessageReceive
 {
     public static final String COMMAND = "PART";
 
@@ -20,28 +20,22 @@ public class ReceivePart
 
     private final String parter;
 
-    public ReceivePart( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceivePart( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         parter = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
         channel = message.getParams()[0].substring( 1 );
     }
 
-    // public ReceivePart( MBassador<IrcEvent> bus, String prefix, String channel )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, channel ) );
-    // }
+    public String getChannel()
+    {
+        return channel;
+    }
 
     public String getParter()
     {
         return parter;
-    }
-
-    public String getChannel()
-    {
-        return channel;
     }
 
 }

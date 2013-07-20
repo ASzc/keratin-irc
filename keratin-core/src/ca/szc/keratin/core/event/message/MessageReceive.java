@@ -6,21 +6,21 @@
  */
 package ca.szc.keratin.core.event.message;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
+import java.util.concurrent.BlockingQueue;
+
 import ca.szc.keratin.core.event.IrcMessageEvent;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 /**
  * IRC messages being received
  */
-public abstract class MessageRecieve
+public abstract class MessageReceive
     extends IrcMessageEvent
 {
 
-    public MessageRecieve( MBassador<IrcEvent> bus, IrcMessage message )
+    public MessageReceive( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
     }
 
 }

@@ -6,22 +6,21 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
+import java.util.concurrent.BlockingQueue;
+
 import org.pmw.tinylog.Logger;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.event.message.interfaces.DirectlyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.PrivatelyReplyable;
 import ca.szc.keratin.core.event.message.interfaces.Replyable;
-import ca.szc.keratin.core.event.message.send.SendPrivmsg;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.InvalidMessagePrefixException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveJoin
-    extends MessageRecieve
+    extends MessageReceive
     implements Replyable, DirectlyReplyable, PrivatelyReplyable
 {
     public static final String COMMAND = "JOIN";
@@ -30,23 +29,12 @@ public class ReceiveJoin
 
     private final String joiner;
 
-    public ReceiveJoin( MBassador<IrcEvent> bus, IrcMessage message )
+    public ReceiveJoin( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         joiner = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
         channel = message.getParams()[0].substring( 1 );
-    }
-
-    // public ReceiveJoin( MBassador<IrcEvent> bus, String prefix, String channel )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, channel ) );
-    // }
-
-    public String getJoiner()
-    {
-        return joiner;
     }
 
     public String getChannel()
@@ -54,16 +42,21 @@ public class ReceiveJoin
         return channel;
     }
 
+    public String getJoiner()
+    {
+        return joiner;
+    }
+
     @Override
-    public void replyPrivately( String reply )
+    public void reply( String reply )
     {
         try
         {
-            getBus().publishAsync( new SendPrivmsg( getBus(), joiner, reply ) );
+            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", channel, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Error sending reply" );
+            Logger.error( e, "Error creating reply message" );
         }
     }
 
@@ -74,15 +67,15 @@ public class ReceiveJoin
     }
 
     @Override
-    public void reply( String reply )
+    public void replyPrivately( String reply )
     {
         try
         {
-            getBus().publishAsync( new SendPrivmsg( getBus(), channel, reply ) );
+            getReplyQueue().offer( new IrcMessage( null, "PRIVMSG", joiner, reply ) );
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Error sending reply" );
+            Logger.error( e, "Error creating reply message" );
         }
     }
 }

@@ -16,11 +16,12 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.SocketFactory;
 
 import net.engio.mbassy.bus.MBassador;
-import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
@@ -28,7 +29,6 @@ import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.IrcMessageEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
-import ca.szc.keratin.core.event.message.MessageSend;
 import ca.szc.keratin.core.event.message.recieve.ReceiveChannelMode;
 import ca.szc.keratin.core.event.message.recieve.ReceiveInvite;
 import ca.szc.keratin.core.event.message.recieve.ReceiveJoin;
@@ -61,7 +61,7 @@ public class ConnectionThread
      */
     private enum RunState
     {
-        CONNECT, READ, DISCONNECT, END
+        CONNECT, DISCONNECT, END, READ
     }
 
     /**
@@ -86,11 +86,13 @@ public class ConnectionThread
 
     private final InetSocketAddress endpoint;
 
+    private final BlockingQueue<IrcMessage> outputQueue;
+
+    private BufferedWriter outputWriter;
+
+    private final Object outputWriterMutex = new Object();
+
     private final SocketFactory socketFactory;
-
-    private final Object outputMutex = new Object();
-
-    private BufferedWriter output;
 
     public ConnectionThread( MBassador<IrcEvent> bus, InetSocketAddress endpoint, SocketFactory socketFactory )
     {
@@ -98,48 +100,29 @@ public class ConnectionThread
         this.endpoint = endpoint;
         this.socketFactory = socketFactory;
 
-        bus.subscribe( this );
+        outputQueue = new LinkedBlockingQueue<IrcMessage>();
     }
 
     private void createOutput( Socket socket )
         throws IOException
     {
-        Logger.trace( "Creating output" );
         OutputStream outputStream = socket.getOutputStream();
-        synchronized ( outputMutex )
+        synchronized ( outputWriterMutex )
         {
-            output = new BufferedWriter( new OutputStreamWriter( outputStream, IoConfig.CHARSET ) );
+            outputWriter = new BufferedWriter( new OutputStreamWriter( outputStream, IoConfig.CHARSET ) );
+
+            // Don't want to carry forward the old stuff from before reconnecting
+            outputQueue.clear();
         }
         Logger.trace( "Output created" );
     }
 
     /**
-     * Converts internal IrcMessage to a raw message and sends it.
-     * 
-     * @param messageToSend
+     * Get the output queue for the socket. May be called immediately.
      */
-    @Handler
-    private void handleMessageSend( MessageSend messageToSend )
+    public BlockingQueue<IrcMessage> getOutputQueue()
     {
-        IrcMessage msg = messageToSend.getMessage();
-        String rawCommand = msg.toString();
-
-        if ( output != null )
-        {
-            try
-            {
-                Logger.trace( "Sending IRC message '" + rawCommand + "'" );
-                writeLine( rawCommand );
-            }
-            catch ( IOException e )
-            {
-                Logger.trace( "Error sending IRC message '" + rawCommand + "'" );
-            }
-        }
-        else
-        {
-            Logger.trace( "First connection has not been established, can't send IRC message '" + rawCommand + "'" );
-        }
+        return outputQueue;
     }
 
     @Override
@@ -147,6 +130,62 @@ public class ConnectionThread
     {
         Thread.currentThread().setName( "InputThread" );
         Logger.trace( "Input thread running" );
+
+        // Converts submitted IrcMessage objects to a raw message and sends it.
+        new Thread()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName( "OutputThread" );
+                Logger.trace( "Output thread running" );
+                while ( !Thread.interrupted() )
+                {
+                    IrcMessage msg;
+                    try
+                    {
+                        msg = outputQueue.take();
+                    }
+                    catch ( InterruptedException e1 )
+                    {
+                        Logger.trace( "Interrupted" );
+                        break;
+                    }
+
+                    String rawCommand = msg.toString();
+
+                    if ( outputWriter != null )
+                    {
+                        try
+                        {
+                            writeLine( rawCommand );
+                        }
+                        catch ( IOException e )
+                        {
+                            Logger.trace( "Error writing IrcMessage: " + rawCommand );
+                        }
+                    }
+                    else
+                    {
+                        Logger.error( "First connection has not been established, can't send IRC message '"
+                            + rawCommand + "'" );
+                    }
+
+                    try
+                    {
+                        // Sending messages too close to each other can cause problems on some servers, if the order of
+                        // the messages matters (ex: NICK must proceed USER at the start of a connection).
+                        Thread.sleep( 50 );
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        Logger.trace( "Interrupted" );
+                        break;
+                    }
+                }
+                Logger.trace( "Run loop ends, thread exiting" );
+            }
+        }.start();
 
         RunState state = RunState.CONNECT;
 
@@ -174,9 +213,9 @@ public class ConnectionThread
 
                     InputStream inputStream = socket.getInputStream();
                     input = new BufferedReader( new InputStreamReader( inputStream, IoConfig.CHARSET ) );
-                    Logger.trace( "Input stream created" );
+                    Logger.trace( "Input created" );
 
-                    bus.publishAsync( new IrcConnect( bus, socket ) );
+                    bus.publishAsync( new IrcConnect( outputQueue, socket ) );
 
                     state = RunState.READ;
                 }
@@ -215,60 +254,60 @@ public class ConnectionThread
                             {
                                 // INVITE
                                 if ( ReceiveInvite.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveInvite( bus, message );
+                                    messageEvent = new ReceiveInvite( outputQueue, message );
 
                                 // JOIN
                                 else if ( ReceiveJoin.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveJoin( bus, message );
+                                    messageEvent = new ReceiveJoin( outputQueue, message );
 
                                 // KICK
                                 else if ( ReceiveKick.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveKick( bus, message );
+                                    messageEvent = new ReceiveKick( outputQueue, message );
 
                                 // MODE
                                 else if ( ReceiveMode.COMMAND.equals( command ) )
                                 {
                                     if ( message.getParams().length == 2 )
-                                        messageEvent = new ReceiveUserMode( bus, message );
+                                        messageEvent = new ReceiveUserMode( outputQueue, message );
                                     else
-                                        messageEvent = new ReceiveChannelMode( bus, message );
+                                        messageEvent = new ReceiveChannelMode( outputQueue, message );
                                 }
 
                                 // NICK
                                 else if ( ReceiveNick.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveNick( bus, message );
+                                    messageEvent = new ReceiveNick( outputQueue, message );
 
                                 // NOTICE
                                 else if ( ReceiveNotice.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveNotice( bus, message );
+                                    messageEvent = new ReceiveNotice( outputQueue, message );
 
                                 // PART
                                 else if ( ReceivePart.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePart( bus, message );
+                                    messageEvent = new ReceivePart( outputQueue, message );
 
                                 // PING
                                 else if ( ReceivePing.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePing( bus, message );
+                                    messageEvent = new ReceivePing( outputQueue, message );
 
                                 // PONG
                                 else if ( ReceivePong.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePong( bus, message );
+                                    messageEvent = new ReceivePong( outputQueue, message );
 
                                 // PRIVMSG
                                 else if ( ReceivePrivmsg.COMMAND.equals( command ) )
-                                    messageEvent = new ReceivePrivmsg( bus, message );
+                                    messageEvent = new ReceivePrivmsg( outputQueue, message );
 
                                 // QUIT
                                 else if ( ReceiveQuit.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveQuit( bus, message );
+                                    messageEvent = new ReceiveQuit( outputQueue, message );
 
                                 // replies
                                 else if ( isDigits( command ) )
-                                    messageEvent = new ReceiveReply( bus, message );
+                                    messageEvent = new ReceiveReply( outputQueue, message );
 
                                 // TOPIC
                                 else if ( ReceiveTopic.COMMAND.equals( command ) )
-                                    messageEvent = new ReceiveTopic( bus, message );
+                                    messageEvent = new ReceiveTopic( outputQueue, message );
 
                                 // others
                                 else
@@ -339,7 +378,7 @@ public class ConnectionThread
                     }
                 }
 
-                bus.publishAsync( new IrcDisconnect( bus, socket ) );
+                bus.publishAsync( new IrcDisconnect( outputQueue, socket ) );
 
                 Logger.info( "Disconnected, attempting reconnect." );
 
@@ -352,13 +391,15 @@ public class ConnectionThread
     private void writeLine( String line )
         throws IOException
     {
-        synchronized ( outputMutex )
+        synchronized ( outputWriterMutex )
         {
-            output.write( line + "\n" );
+            Logger.trace( "Writing line: " + line );
+
+            outputWriter.write( line + "\n" );
 
             try
             {
-                output.flush();
+                outputWriter.flush();
             }
             catch ( IOException e )
             {

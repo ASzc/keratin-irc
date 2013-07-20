@@ -6,49 +6,43 @@
  */
 package ca.szc.keratin.core.event.message.recieve;
 
-import net.engio.mbassy.bus.MBassador;
-import ca.szc.keratin.core.event.IrcEvent;
-import ca.szc.keratin.core.event.message.MessageRecieve;
+import java.util.concurrent.BlockingQueue;
+
+import ca.szc.keratin.core.event.message.MessageReceive;
 import ca.szc.keratin.core.net.message.IrcMessage;
 
 public class ReceiveInvite
-    extends MessageRecieve
+    extends MessageReceive
 {
     public static final String COMMAND = "INVITE";
 
     private final String channel;
 
-    private final String sender;
-
     private final String invitee;
 
-    public ReceiveInvite( MBassador<IrcEvent> bus, IrcMessage message )
+    private final String sender;
+
+    public ReceiveInvite( BlockingQueue<IrcMessage> replyQueue, IrcMessage message )
     {
-        super( bus, message );
+        super( replyQueue, message );
 
         sender = message.getPrefix().substring( 0, message.getPrefix().indexOf( '!' ) );
         invitee = message.getParams()[0];
         channel = message.getParams()[1];
     }
 
-    // public ReceiveInvite( MBassador<IrcEvent> bus, String prefix, String nick, String channel )
-    // throws InvalidMessagePrefixException, InvalidMessageCommandException, InvalidMessageParamException
-    // {
-    // super( bus, new IrcMessage( prefix, COMMAND, nick, channel ) );
-    // }
-
     public String getChannel()
     {
         return channel;
     }
 
-    public String getSender()
-    {
-        return sender;
-    }
-
     public String getInvitee()
     {
         return invitee;
+    }
+
+    public String getSender()
+    {
+        return sender;
     }
 }
