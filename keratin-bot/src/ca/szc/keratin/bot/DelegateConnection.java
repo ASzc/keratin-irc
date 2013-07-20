@@ -77,6 +77,7 @@ public class DelegateConnection
                     try
                     {
                         ConnectionRunnable task = taskQueue.take();
+                        Logger.trace( "Got delegate connection task" );
                         task.run( getConnection() );
                     }
                     catch ( InterruptedException e )
@@ -84,9 +85,13 @@ public class DelegateConnection
                         break;
                     }
                 }
+                Logger.trace( "Run loop ends, exiting" );
 
                 if ( connection != null )
+                {
+                    Logger.trace( "Disconnecting delegate connection" );
                     connection.disconnect();
+                }
             }
         }.start();
     }
@@ -95,6 +100,7 @@ public class DelegateConnection
     {
         if ( connection == null )
         {
+            Logger.info( "Starting delegate connection" );
             try
             {
                 IrcConnection conn = new IrcConnection( address, port, sslMode );

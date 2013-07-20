@@ -56,7 +56,7 @@ public class ConnectionPreamble
         }
         catch ( InvalidMessagePrefixException | InvalidMessageCommandException | InvalidMessageParamException e )
         {
-            Logger.error( e, "Couldn't enqueue user info preamble." );
+            Logger.error( e, "Couldn't enqueue nick/user info preamble." );
         }
     }
 }
