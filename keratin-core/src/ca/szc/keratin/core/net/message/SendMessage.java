@@ -30,7 +30,7 @@ public class SendMessage
 
     protected static final String NAMES_COMMAND = "NAMES";
 
-    protected static final String NICK_COMMAND = "NAMES";
+    protected static final String NICK_COMMAND = "NICK";
 
     protected static final String NOTICE_COMMAND = "NOTICE";
 
