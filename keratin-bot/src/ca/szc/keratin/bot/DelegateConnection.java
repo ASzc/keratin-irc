@@ -6,16 +6,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import net.engio.mbassy.bus.MBassador;
 import net.engio.mbassy.listener.Handler;
 
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
+import ca.szc.keratin.core.net.mbassador.MBassadorWrapper;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 
 /**
@@ -117,7 +116,7 @@ public class DelegateConnection
             {
                 IrcConnection conn = new IrcConnection( address, port, sslMode );
 
-                MBassador<IrcEvent> bus = conn.getEventBus();
+                MBassadorWrapper bus = conn.getEventBus();
                 bus.subscribe( new ConnectionPreamble( user, nick, realName ) );
 
                 // So up so we can wait for the connection to be established

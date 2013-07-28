@@ -21,11 +21,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.SocketFactory;
 
-import net.engio.mbassy.bus.MBassador;
 
 import org.pmw.tinylog.Logger;
 
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.event.IrcMessageEvent;
 import ca.szc.keratin.core.event.connection.IrcConnect;
 import ca.szc.keratin.core.event.connection.IrcDisconnect;
@@ -44,6 +42,7 @@ import ca.szc.keratin.core.event.message.recieve.ReceiveQuit;
 import ca.szc.keratin.core.event.message.recieve.ReceiveReply;
 import ca.szc.keratin.core.event.message.recieve.ReceiveTopic;
 import ca.szc.keratin.core.event.message.recieve.ReceiveUserMode;
+import ca.szc.keratin.core.net.mbassador.MBassadorWrapper;
 import ca.szc.keratin.core.net.message.InvalidMessageCommandException;
 import ca.szc.keratin.core.net.message.InvalidMessageException;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
@@ -82,7 +81,7 @@ public class ConnectionThread
         }
     }
 
-    private final MBassador<IrcEvent> bus;
+    private final MBassadorWrapper bus;
 
     private final InetSocketAddress endpoint;
 
@@ -96,7 +95,7 @@ public class ConnectionThread
 
     private final SocketFactory socketFactory;
 
-    public ConnectionThread( MBassador<IrcEvent> bus, InetSocketAddress endpoint, SocketFactory socketFactory )
+    public ConnectionThread( MBassadorWrapper bus, InetSocketAddress endpoint, SocketFactory socketFactory )
     {
         this.bus = bus;
         this.endpoint = endpoint;

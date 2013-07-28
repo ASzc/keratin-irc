@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.engio.mbassy.bus.MBassador;
 
 import org.pmw.tinylog.Logger;
 
@@ -26,10 +25,10 @@ import ca.szc.keratin.bot.annotation.AssignedBot;
 import ca.szc.keratin.bot.annotation.HandlerContainerDetector;
 import ca.szc.keratin.bot.handlers.ConnectionPreamble;
 import ca.szc.keratin.bot.handlers.ManageChannels;
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.net.IrcConnection;
 import ca.szc.keratin.core.net.IrcConnection.SslMode;
 import ca.szc.keratin.core.net.io.OutputQueue;
+import ca.szc.keratin.core.net.mbassador.MBassadorWrapper;
 import ca.szc.keratin.core.net.message.InvalidMessageParamException;
 import ca.szc.keratin.core.net.message.IrcMessage;
 import ca.szc.keratin.core.net.message.SendMessage;
@@ -62,7 +61,7 @@ public class KeratinBot
 
     private DelegateConnection delegateConn;
 
-    private MBassador<IrcEvent> connectionBus;
+    private MBassadorWrapper connectionBus;
 
     /**
      * Make a KeratinBot with no fields predefined. Must have fields set before calling connect().

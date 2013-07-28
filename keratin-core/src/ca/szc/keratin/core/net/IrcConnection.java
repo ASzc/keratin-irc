@@ -14,16 +14,15 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import net.engio.mbassy.bus.BusConfiguration;
-import net.engio.mbassy.bus.MBassador;
 
 import org.pmw.tinylog.Logger;
 
-import ca.szc.keratin.core.event.IrcEvent;
 import ca.szc.keratin.core.net.handlers.BusErrorHandler;
 import ca.szc.keratin.core.net.handlers.DeadMessageHandler;
 import ca.szc.keratin.core.net.handlers.ServerPingHandler;
 import ca.szc.keratin.core.net.io.ConnectionThread;
 import ca.szc.keratin.core.net.io.OutputQueue;
+import ca.szc.keratin.core.net.mbassador.MBassadorWrapper;
 import ca.szc.keratin.core.net.mbassador.TimeoutSubscriptionFactory;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 import ca.szc.keratin.core.net.util.TrustAllTrustManager;
@@ -34,7 +33,7 @@ public class IrcConnection
 
     private InetSocketAddress endpoint;
 
-    private MBassador<IrcEvent> bus;
+    private MBassadorWrapper bus;
 
     private OutputQueue outputQueue;
 
@@ -129,7 +128,7 @@ public class IrcConnection
         // before connecting.
         BusConfiguration busConf = BusConfiguration.Default();
         // busConf.setSubscriptionFactory( new TimeoutSubscriptionFactory() );
-        bus = new MBassador<IrcEvent>( busConf );
+        bus = new MBassadorWrapper( busConf );
 
         if ( SslMode.ON.equals( ssl ) )
             socketFactory = SSLSocketFactory.getDefault();
@@ -144,7 +143,7 @@ public class IrcConnection
      * 
      * @return the central MBassador bus
      */
-    public MBassador<IrcEvent> getEventBus()
+    public MBassadorWrapper getEventBus()
     {
         return bus;
     }
