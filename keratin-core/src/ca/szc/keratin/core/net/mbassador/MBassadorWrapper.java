@@ -54,7 +54,7 @@ public class MBassadorWrapper
                 {
                     try
                     {
-                        boolean activityTimedout = !activityMonitor.tryAcquire( 10, TimeUnit.SECONDS );
+                        boolean activityTimedout = !activityMonitor.tryAcquire( 30, TimeUnit.SECONDS );
                         if ( activityTimedout )
                         {
                             Logger.trace( "No activity, checking if the bus is alive" );
