@@ -21,7 +21,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.SocketFactory;
 
-
 import org.pmw.tinylog.Logger;
 
 import ca.szc.keratin.core.event.IrcMessageEvent;
@@ -317,8 +316,11 @@ public class ConnectionThread
                             }
                             catch ( Exception e )
                             {
-                                Logger.error( "Error when creating message event, type: "
-                                    + messageEvent.getClass().getSimpleName() + ", content: " + messageEvent );
+                                String type = "null";
+                                if ( messageEvent != null )
+                                    type = messageEvent.getClass().getSimpleName();
+                                Logger.error( "Error when creating message event, type: " + type + ", content: "
+                                    + messageEvent );
                             }
 
                             if ( messageEvent != null )
