@@ -153,7 +153,10 @@ public class IrcConnection
      */
     public OutputQueue getOutputQueue()
     {
-        return outputQueue;
+        if (outputQueue != null)
+            return outputQueue;
+        else
+            throw new IllegalStateException("OutputQueue cannot be requested before connection is made");
     }
 
     /**
