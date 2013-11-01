@@ -156,9 +156,9 @@ public class KeratinBot
         delegateConn = new DelegateConnection( serverAddress, serverPort, sslMode, user, nick + "-del", realName );
 
         connection = conn;
+        conn.connect();
         outputQueue = conn.getOutputQueue();
 
-        conn.connect();
         connectionActive = true;
     }
 

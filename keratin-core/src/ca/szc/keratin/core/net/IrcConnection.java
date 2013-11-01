@@ -23,7 +23,6 @@ import ca.szc.keratin.core.net.handlers.ServerPingHandler;
 import ca.szc.keratin.core.net.io.ConnectionThread;
 import ca.szc.keratin.core.net.io.OutputQueue;
 import ca.szc.keratin.core.net.mbassador.MBassadorWrapper;
-import ca.szc.keratin.core.net.mbassador.TimeoutSubscriptionFactory;
 import ca.szc.keratin.core.net.util.InvalidPortException;
 import ca.szc.keratin.core.net.util.TrustAllTrustManager;
 
@@ -153,7 +152,10 @@ public class IrcConnection
      */
     public OutputQueue getOutputQueue()
     {
-        return outputQueue;
+        if (outputQueue != null)
+            return outputQueue;
+        else
+            throw new IllegalStateException("OutputQueue cannot be requested before connection is made");
     }
 
     /**

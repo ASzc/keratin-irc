@@ -174,7 +174,7 @@ public class SendMessage
                 String[] parameters = new String[params.length + nonVarargParams];
                 parameters[0] = target;
                 parameters[1] = mode;
-                for ( int i = nonVarargParams; i < params.length; i++ )
+                for ( int i = nonVarargParams; i < params.length + nonVarargParams; i++ )
                     parameters[i] = params[i - nonVarargParams];
 
                 return new IrcMessage( null, MODE_COMMAND, parameters );
